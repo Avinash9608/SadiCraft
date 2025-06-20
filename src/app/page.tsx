@@ -5,7 +5,7 @@ import React, { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { biodataSchema, type BiodataFormValues, defaultBiodataValues } from '@/lib/zod-schemas';
-import html2pdf from 'html2pdf.js';
+// Removed static import: import html2pdf from 'html2pdf.js';
 
 import AppHeader from '@/components/shaadicraft/AppHeader';
 import BiodataForm from '@/components/shaadicraft/BiodataForm';
@@ -25,11 +25,14 @@ export default function ShaadiCraftPage() {
   const { toast } = useToast();
 
 
-  const handleDownloadPdf = useCallback(() => {
+  const handleDownloadPdf = useCallback(async () => {
+    // Dynamically import html2pdf.js
+    const html2pdf = (await import('html2pdf.js')).default;
+
     const element = document.getElementById('biodata-preview-content');
     const currentData = form.getValues();
 
-    if (element) {
+    if (element && html2pdf) {
       const filename = currentData.fullName
         ? `${currentData.fullName.replace(/\s+/g, '_')}_Biodata.pdf`
         : 'biodata.pdf';
@@ -52,12 +55,22 @@ export default function ShaadiCraftPage() {
           });
         });
     } else {
-      console.error("Biodata preview element not found for PDF generation.");
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not generate PDF. Preview element is missing.",
-      });
+      if (!element) {
+        console.error("Biodata preview element not found for PDF generation.");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not generate PDF. Preview element is missing.",
+        });
+      }
+      if (!html2pdf) {
+        console.error("html2pdf library not loaded.");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not generate PDF. PDF library failed to load.",
+        });
+      }
     }
   }, [form, toast]);
 
