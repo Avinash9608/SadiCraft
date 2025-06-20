@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+// import { zodResolver } from '@hookform/resolvers/zod'; // Not needed directly here if passed in page
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,12 +35,12 @@ const BiodataForm: React.FC<BiodataFormProps> = ({ form }) => {
 
   const prepareAiInput = (formData: BiodataFormValues): GenerateIntroInput => {
     return {
-      personalDetails: `Name: ${formData.fullName}, DOB: ${formData.dob}, Height: ${formData.height || 'N/A'}, Religion: ${formData.religion || 'N/A'}, Caste: ${formData.caste || 'N/A'}, Mother Tongue: ${formData.motherTongue || 'N/A'}, Marital Status: ${formData.maritalStatus || 'N/A'}.`,
-      familyDetails: `Father: ${formData.fatherName || 'N/A'} (${formData.fatherOccupation || 'N/A'}), Mother: ${formData.motherName || 'N/A'} (${formData.motherOccupation || 'N/A'}), Siblings: ${formData.siblings || 'N/A'}, Family Values: ${formData.familyValues || 'N/A'}.`,
+      personalDetails: `Name: ${formData.fullName}, Age: ${formData.age}, DOB: ${formData.dob}, Height: ${formData.height || 'N/A'}, Gender: ${formData.gender || 'N/A'}, Complexion: ${formData.complexion || 'N/A'}, Religion: ${formData.religion || 'N/A'}, Caste: ${formData.caste || 'N/A'}, Sub-caste: ${formData.subCaste || 'N/A'}, Mother Tongue: ${formData.motherTongue || 'N/A'}, Marital Status: ${formData.maritalStatus || 'N/A'}, Manglik Status: ${formData.manglikStatus || 'N/A'}.`,
+      familyDetails: `Father: ${formData.fatherName || 'N/A'} (${formData.fatherOccupation || 'N/A'}), Mother: ${formData.motherName || 'N/A'} (${formData.motherOccupation || 'N/A'}), Siblings: ${formData.siblings || 'N/A'}, Family Type: ${formData.familyType || 'N/A'}, Family Values: ${formData.familyValues || 'N/A'}, Family Location: ${formData.familyLocation || 'N/A'}, Native Place: ${formData.nativePlace || 'N/A'}.`,
       educationDetails: `Highest Qualification: ${formData.highestQualification || 'N/A'}, College: ${formData.collegeName || 'N/A'}, Year: ${formData.graduationYear || 'N/A'}.`,
-      professionalDetails: `Occupation: ${formData.occupation || 'N/A'}, Company: ${formData.companyName || 'N/A'}, Income: ${formData.annualIncome || 'N/A'}.`,
-      lifestyleDetails: `Diet: ${formData.diet || 'N/A'}, Hobbies: ${formData.hobbies || 'N/A'}, Interests: ${formData.interests || 'N/A'}.`,
-      contactDetails: `Phone: ${formData.phone || 'N/A'}, Email: ${formData.email || 'N/A'}, Address: ${formData.address || 'N/A'}.`,
+      professionalDetails: `Occupation: ${formData.occupation || 'N/A'}, Company: ${formData.companyName || 'N/A'}, Role: ${formData.role || 'N/A'}, Work Mode: ${formData.workMode || 'N/A'}, Income: ${formData.annualIncome || 'N/A'}.`,
+      lifestyleDetails: `Diet: ${formData.diet || 'N/A'}, Smoking: ${formData.smoking || 'N/A'}, Drinking: ${formData.drinking || 'N/A'}, Hobbies: ${formData.hobbies || 'N/A'}, Interests: ${formData.interests || 'N/A'}, Languages Known: ${formData.languagesKnown || 'N/A'}.`,
+      contactDetails: `Phone: ${formData.phone || 'N/A'}, Email: ${formData.email || 'N/A'}, Address: ${formData.address || 'N/A'}, Contact Person: ${formData.contactPerson || 'N/A'}.`,
       layoutChoice: formData.layout,
     };
   };
@@ -136,8 +136,6 @@ const BiodataForm: React.FC<BiodataFormProps> = ({ form }) => {
             </TabsContent>
           ))}
         </Tabs>
-        {/* Submit button is not strictly needed as data is used for preview/PDF, but good for form semantics if ever needed */}
-        {/* <Button type="submit" className="w-full">Save Biodata (For Future Use - TBD)</Button> */}
       </form>
     </Form>
   );

@@ -18,7 +18,7 @@ const ContactDetailsForm: React.FC<ContactDetailsFormProps> = ({ form }) => {
         name="phone"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Phone Number (Optional)</FormLabel>
+            <FormLabel>Mobile Number (Optional)</FormLabel>
             <FormControl>
               <Input type="tel" placeholder="E.g., +91 XXXXXXXXXX" {...field} />
             </FormControl>
@@ -44,9 +44,22 @@ const ContactDetailsForm: React.FC<ContactDetailsFormProps> = ({ form }) => {
         name="address"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Current Address (Optional)</FormLabel>
+            <FormLabel>Current Address (Optional, for individual)</FormLabel>
             <FormControl>
               <Textarea placeholder="E.g., City, State, Country. Be mindful of privacy." {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="contactPerson"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Contact Person (Optional, for family to contact)</FormLabel>
+            <FormControl>
+              <Input placeholder="E.g., Mr. Manoj Kumar (Father)" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

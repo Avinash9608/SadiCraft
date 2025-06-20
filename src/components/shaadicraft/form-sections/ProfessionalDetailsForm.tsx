@@ -3,7 +3,8 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// import { Textarea } from '@/components/ui/textarea'; // If more details needed
 import type { BiodataFormValues } from '@/lib/zod-schemas';
 
 interface ProfessionalDetailsFormProps {
@@ -20,7 +21,7 @@ const ProfessionalDetailsForm: React.FC<ProfessionalDetailsFormProps> = ({ form 
           <FormItem>
             <FormLabel>Occupation / Profession</FormLabel>
             <FormControl>
-              <Input placeholder="E.g., Software Engineer, Doctor, Teacher" {...field} />
+              <Input placeholder="E.g., Software Engineer" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -33,8 +34,43 @@ const ProfessionalDetailsForm: React.FC<ProfessionalDetailsFormProps> = ({ form 
           <FormItem>
             <FormLabel>Company Name / Organization</FormLabel>
             <FormControl>
-              <Input placeholder="E.g., Google, Tata Consultancy Services, Self-employed" {...field} />
+              <Input placeholder="E.g., IndTechmark, Govt. Sector" {...field} />
             </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="role"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Role / Designation (Optional)</FormLabel>
+            <FormControl>
+              <Input placeholder="E.g., Backend Developer, Manager" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="workMode"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Work Mode (Optional)</FormLabel>
+             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select work mode" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Work From Home">Work From Home (WFH)</SelectItem>
+                  <SelectItem value="Work From Office">Work From Office</SelectItem>
+                  <SelectItem value="Hybrid">Hybrid</SelectItem>
+                </SelectContent>
+              </Select>
             <FormMessage />
           </FormItem>
         )}
@@ -52,22 +88,6 @@ const ProfessionalDetailsForm: React.FC<ProfessionalDetailsFormProps> = ({ form 
           </FormItem>
         )}
       />
-       {/* Optionally, add a Textarea for more details about profession if needed */}
-      {/*
-      <FormField
-        control={form.control}
-        name="professionalExtraDetails" // Add this to schema if used
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Additional Professional Details (Optional)</FormLabel>
-            <FormControl>
-              <Textarea placeholder="Describe your role, responsibilities, or career aspirations." {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      */}
     </div>
   );
 };
