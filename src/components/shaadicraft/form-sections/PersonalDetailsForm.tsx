@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PhotoUpload from '@/components/shaadicraft/PhotoUpload';
 import type { BiodataFormValues } from '@/lib/zod-schemas';
+import React from 'react';
 
 interface PersonalDetailsFormProps {
   form: UseFormReturn<BiodataFormValues>;
