@@ -1,0 +1,110 @@
+import React from 'react';
+import Image from 'next/image';
+import type { BiodataFormValues } from '@/lib/zod-schemas';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { User, Users, GraduationCap, Briefcase, Heart, Phone, Info } from 'lucide-react';
+
+interface ModernLayoutProps {
+  data: BiodataFormValues;
+}
+
+const DetailItem: React.FC<{ label: string; value?: string; icon?: React.ElementType }> = ({ label, value, icon: Icon }) => {
+  if (!value) return null;
+  return (
+    <div className="flex items-start space-x-3 py-2">
+      {Icon && <Icon className="h-5 w-5 text-primary mt-1 shrink-0" />}
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="text-base text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+};
+
+const Section: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
+  <section className="mb-8 p-6 bg-card rounded-lg shadow-md">
+    <div className="flex items-center mb-4">
+      <Icon className="h-6 w-6 text-primary mr-3" />
+      <h3 className="text-xl font-semibold text-primary">{title}</h3>
+    </div>
+    <Separator className="mb-4" />
+    <div className="space-y-3">{children}</div>
+  </section>
+);
+
+
+const ModernLayout: React.FC<ModernLayoutProps> = ({ data }) => {
+  return (
+    <div id="biodata-preview-content" className="p-4 md:p-6 bg-background rounded-lg shadow-xl font-body">
+      <header className="text-center mb-8 p-6 bg-primary text-primary-foreground rounded-t-lg">
+        {data.photo && (
+          <div className="mx-auto w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-primary-foreground shadow-lg mb-4 -mt-16 md:-mt-20 relative bg-background">
+            <Image src={data.photo} alt={data.fullName || 'Profile Photo'} layout="fill" objectFit="cover" data-ai-hint="profile photo"/>
+          </div>
+        )}
+        <h1 className="text-3xl md:text-4xl font-bold font-headline">{data.fullName || "Full Name"}</h1>
+        {data.occupation && <p className="text-lg opacity-90">{data.occupation}</p>}
+      </header>
+
+      {data.introduction && (
+         <Section title="About Me" icon={Info}>
+            <p className="text-base leading-relaxed whitespace-pre-wrap">{data.introduction}</p>
+         </Section>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Section title="Personal Details" icon={User}>
+            <DetailItem label="Date of Birth" value={data.dob} />
+            <DetailItem label="Height" value={data.height} />
+            <DetailItem label="Marital Status" value={data.maritalStatus} />
+            <DetailItem label="Religion" value={data.religion} />
+            <DetailItem label="Caste / Community" value={data.caste} />
+            <DetailItem label="Mother Tongue" value={data.motherTongue} />
+          </Section>
+
+          <Section title="Educational Background" icon={GraduationCap}>
+            <DetailItem label="Highest Qualification" value={data.highestQualification} />
+            <DetailItem label="College/University" value={data.collegeName} />
+            <DetailItem label="Year of Completion" value={data.graduationYear} />
+          </Section>
+
+           <Section title="Lifestyle" icon={Heart}>
+            <DetailItem label="Dietary Preferences" value={data.diet} />
+            <DetailItem label="Hobbies" value={data.hobbies} />
+            <DetailItem label="Interests" value={data.interests} />
+          </Section>
+        </div>
+
+        <div>
+          <Section title="Family Background" icon={Users}>
+            <DetailItem label="Father's Name" value={data.fatherName} />
+            <DetailItem label="Father's Occupation" value={data.fatherOccupation} />
+            <DetailItem label="Mother's Name" value={data.motherName} />
+            <DetailItem label="Mother's Occupation" value={data.motherOccupation} />
+            <DetailItem label="Siblings" value={data.siblings} />
+            <DetailItem label="Family Values" value={data.familyValues} />
+          </Section>
+
+          <Section title="Professional Details" icon={Briefcase}>
+            <DetailItem label="Occupation" value={data.occupation} />
+            <DetailItem label="Company / Organization" value={data.companyName} />
+            <DetailItem label="Annual Income" value={data.annualIncome} />
+          </Section>
+
+          <Section title="Contact Information" icon={Phone}>
+            <DetailItem label="Phone" value={data.phone} />
+            <DetailItem label="Email" value={data.email} />
+            <DetailItem label="Address" value={data.address} />
+          </Section>
+        </div>
+      </div>
+       <footer className="mt-8 pt-4 text-center text-xs text-muted-foreground border-t border-border">
+        Biodata generated by ShaadiCraft
+      </footer>
+    </div>
+  );
+};
+
+export default ModernLayout;
