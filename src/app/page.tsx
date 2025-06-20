@@ -26,39 +26,41 @@ export default function ShaadiCraftPage() {
 
 
   const handleDownloadPdf = useCallback(async () => {
-    // Dynamically import html2pdf.js
-    const html2pdf = (await import('html2pdf.js')).default;
+    if (typeof window !== 'undefined') {
+      // Dynamically import html2pdf.js
+      const html2pdf = (await import('html2pdf.js')).default;
 
-    const element = document.getElementById('biodata-preview-content');
-    const currentData = form.getValues();
+      const element = document.getElementById('biodata-preview-content');
+      const currentData = form.getValues();
 
-    if (element && html2pdf) {
-      const filename = currentData.fullName
-        ? `${currentData.fullName.replace(/\s+/g, '_')}_Biodata.pdf`
-        : 'biodata.pdf';
+      if (element && html2pdf) {
+        const filename = currentData.fullName
+          ? `${currentData.fullName.replace(/\\s+/g, '_')}_Biodata.pdf`
+          : 'biodata.pdf';
 
-      const opt = {
-        margin:       0.5,
-        filename:     filename,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false, letterRendering: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
+        const opt = {
+          margin:       0.5,
+          filename:     filename,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, logging: false, letterRendering: true },
+          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
 
-      html2pdf().from(element).set(opt).save()
-        .catch((err: Error) => {
-          console.error("Error generating PDF:", err);
+        html2pdf().from(element).set(opt).save()
+          .catch((err: Error) => {
+            console.error("Error generating PDF:", err);
+            toast({
+              variant: "destructive",
+              title: "PDF Generation Failed",
+              description: "There was an error generating the PDF. Please try again.",
+            });
+          });
+      } else {
+        if (!element) {
+          console.error("Biodata preview element not found for PDF generation.");
           toast({
             variant: "destructive",
-            title: "PDF Generation Failed",
-            description: "There was an error generating the PDF. Please try again.",
-          });
-        });
-    } else {
-      if (!element) {
-        console.error("Biodata preview element not found for PDF generation.");
-        toast({
-          variant: "destructive",
+
           title: "Error",
           description: "Could not generate PDF. Preview element is missing.",
         });
@@ -71,6 +73,7 @@ export default function ShaadiCraftPage() {
           description: "Could not generate PDF. PDF library failed to load.",
         });
       }
+    }
     }
   }, [form, toast]);
 
