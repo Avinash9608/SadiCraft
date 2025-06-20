@@ -1,19 +1,18 @@
-
 "use client";
 
+import * as React from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PhotoUpload from '@/components/shaadicraft/PhotoUpload';
 import type { BiodataFormValues } from '@/lib/zod-schemas';
-import React from 'react';
 
 interface PersonalDetailsFormProps {
   form: UseFormReturn<BiodataFormValues>;
 }
 
-const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({ form }) => {
+function PersonalDetailsForm({ form }: PersonalDetailsFormProps) {
   return (
     <div className="space-y-6">
       <PhotoUpload form={form} />
@@ -122,6 +121,6 @@ const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({ form }) => {
       </div>
     </div>
   );
-};
+}
 
 export default PersonalDetailsForm;
