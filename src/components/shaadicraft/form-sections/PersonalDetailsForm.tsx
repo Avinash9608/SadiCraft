@@ -1,6 +1,7 @@
+
 "use client";
 
-import * as React from 'react';
+import React from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ interface PersonalDetailsFormProps {
   form: UseFormReturn<BiodataFormValues>;
 }
 
-function PersonalDetailsForm({ form }: PersonalDetailsFormProps) {
+const PersonalDetailsForm: React.FC<PersonalDetailsFormProps> = ({ form }) => {
   return (
     <div className="space-y-6">
       <PhotoUpload form={form} />
@@ -121,6 +122,6 @@ function PersonalDetailsForm({ form }: PersonalDetailsFormProps) {
       </div>
     </div>
   );
-}
+};
 
 export default PersonalDetailsForm;
