@@ -26,6 +26,17 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    if (!auth) {
+      toast({
+        variant: 'destructive',
+        title: 'Registration Failed',
+        description:
+          'Firebase is not configured. Please add your Firebase credentials to .env.local.',
+      });
+      setIsLoading(false);
+      return;
+    }
+
     if (!fullName) {
         toast({
             variant: "destructive",

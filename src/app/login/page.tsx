@@ -25,6 +25,17 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    if (!auth) {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description:
+          'Firebase is not configured. Please add your Firebase credentials to .env.local.',
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       

@@ -1,6 +1,6 @@
 
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
 
 // IMPORTANT: 
 // Create a file named .env.local in the root of your project
@@ -24,8 +24,26 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
+let app: FirebaseApp;
+let auth: Auth;
+
+// Check if the essential Firebase config is provided
+const isFirebaseConfigProvided = firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId;
+
+if (isFirebaseConfigProvided) {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+} else {
+    // If config is not provided, we cannot initialize Firebase.
+    // To prevent the app from crashing, we'll export dummy objects.
+    // The app will not have Firebase functionality.
+    console.warn(
+        "Firebase configuration is missing or incomplete in your .env.local file. " +
+        "Firebase features will be disabled. Please check src/lib/firebase.ts for required variables."
+    );
+    app = null as any; // Using any to satisfy the type system for the dummy export
+    auth = null as any;
+}
+
 
 export { app, auth };
