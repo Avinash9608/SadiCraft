@@ -38,6 +38,7 @@ if (isFirebaseConfigProvided) {
     // Initialize Firestore with long-polling to avoid WebSocket issues
     db = initializeFirestore(app, {
       experimentalForceLongPolling: true,
+      ignoreUndefinedProperties: true,
     });
 } else {
     // If config is not provided, we cannot initialize Firebase.

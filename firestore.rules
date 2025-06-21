@@ -1,11 +1,25 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // A user can only read or update their own document.
-      allow read, update: if request.auth.uid == userId;
-      // A user can only create a document for themselves.
-      allow create: if request.auth.uid == userId;
+      // 1. CREATE: A user can create their own document if their UID matches the document ID.
+      // This is essential for the registration process.
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // 2. READ, UPDATE, DELETE: A user can only read, update, or delete their own document.
+      // This prevents users from accessing or modifying other users' data.
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Add rules for other collections here if needed
+    // For example:
+    // match /public_profiles/{profileId} {
+    //   allow read: if true;
+    //   allow write: if request.auth != null;
+    // }
   }
 }

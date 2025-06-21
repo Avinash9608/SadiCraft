@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
-  const [features, setFeatures] = useState<Features | null>(null);
+  const [features, setFeatures] = useState<Features | null>(defaultFeatures);
 
   useEffect(() => {
     if (!db || !auth) {
@@ -104,17 +104,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 updateDoc(userDocRef, { 
                     'subscription.isActive': false,
                     'features': defaultFeatures
-                });
+                }).catch(err => console.error("Failed to update expired subscription:", err));
             }
 
             setIsPremium(isActive);
             setSubscription(sub);
-            setFeatures(data.features as Features);
+            setFeatures((data.features as Features) || defaultFeatures);
+          } else {
+             // Handle case where user exists in Auth but not Firestore
+            setIsPremium(false);
+            setSubscription(null);
+            setFeatures(defaultFeatures);
           }
           setLoading(false);
           clearTimeout(loadingTimeout);
         }, (error) => {
-          console.error("AuthContext: Firestore snapshot error:", error.code, error.message, error);
+          console.error(`AuthContext: Firestore snapshot error. Code: ${error.code}, Message: ${error.message}`, error);
           setLoading(false);
           clearTimeout(loadingTimeout);
         });
@@ -138,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateUserPlan = useCallback(async (plan: Plan, paymentId: string) => {
-    if (!user || !db) return;
+    if (!user || !db) throw new Error("User not authenticated or DB not available.");
 
     const userDocRef = doc(db, 'users', user.uid);
 
@@ -165,6 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (plan === 'silver') {
           newFeatures = { ...newFeatures, ...basePremiumFeatures };
         } else if (plan === 'gold') {
+          expiryDate = Timestamp.fromDate(new Date(new Date().setFullYear(now.getFullYear() + 1)));
           newFeatures = {
             ...newFeatures,
             ...basePremiumFeatures,
@@ -173,7 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             astroReports: 5,
           };
         } else if (plan === 'platinum') {
-          expiryDate = null;
+          expiryDate = null; // Lifetime
           newFeatures = {
             ...newFeatures,
             ...basePremiumFeatures,
@@ -183,17 +189,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             relationshipManager: true,
             remainingBoosts: 1, 
           };
+        } else { // free plan
+           expiryDate = null;
         }
         
         newSubscription = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
         
-        await updateDoc(userDocRef, {
-            subscription: newSubscription,
-            features: newFeatures,
-        });
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+            await updateDoc(userDocRef, {
+                subscription: newSubscription,
+                features: newFeatures,
+            });
+        } else {
+             await setDoc(userDocRef, {
+                subscription: newSubscription,
+                features: newFeatures,
+                email: user.email,
+                name: user.displayName,
+                createdAt: Timestamp.now(),
+            });
+        }
 
     } catch (error) {
         console.error("Error updating user plan:", error);
+        throw error; // Re-throw to be handled by the caller
     }
   }, [user]);
 
