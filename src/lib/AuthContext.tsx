@@ -64,6 +64,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'shaadiCraftSubscription') {
+         // When subscription data changes in another tab or after payment,
+         // reload the page to ensure the context is re-initialized with fresh data.
+         // This is a robust way to guarantee state consistency.
          window.location.reload();
       }
     };

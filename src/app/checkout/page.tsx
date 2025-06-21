@@ -62,6 +62,7 @@ export default function CheckoutPage() {
     if (plan && plans[plan]) {
       setSelectedPlanKey(plan);
     } else {
+      // Default to a plan if none is selected, or handle error
       setSelectedPlanKey('silver');
     }
   }, [searchParams]);
@@ -109,13 +110,15 @@ export default function CheckoutPage() {
 
           if (result.success && selectedPlanKey) {
             const now = new Date();
-            let expiryDate: string | null = 'lifetime';
+            let expiryDate: string | null = null; // Default to null
 
-            if (planDetails.period.includes('month')) {
+            if (selectedPlanKey === 'platinum') {
+              expiryDate = 'lifetime';
+            } else if (selectedPlanKey === 'silver') {
               const expiry = new Date(now);
               expiry.setDate(expiry.getDate() + 30);
               expiryDate = expiry.toISOString();
-            } else if (planDetails.period.includes('year')) {
+            } else if (selectedPlanKey === 'gold') {
                const expiry = new Date(now);
                expiry.setFullYear(expiry.getFullYear() + 1);
                expiryDate = expiry.toISOString();
@@ -128,20 +131,22 @@ export default function CheckoutPage() {
               paymentId: response.razorpay_payment_id,
             };
 
+            // This is the key step: saving the subscription data to localStorage.
+            // The AuthContext will pick up this change via the 'storage' event listener.
             localStorage.setItem('shaadiCraftSubscription', JSON.stringify(subscriptionData));
             
             toast({ title: "Payment Successful!", description: `Welcome to the ${planDetails.name}! You now have access to all its features.` });
             
-            // Force a reload of the context by navigating.
+            // Redirect the user. The AuthContext's listener will handle the state update.
             router.push('/create');
-            router.refresh();
+
           } else {
             toast({ variant: 'destructive', title: 'Payment Verification Failed', description: 'Please contact support.' });
           }
         },
         prefill: {
           name: authContext.user.displayName || 'Valued Customer',
-          email: authContext.user.email,
+          email: authContext.user.email || '',
         },
         theme: {
           color: '#000080',
