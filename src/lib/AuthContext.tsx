@@ -5,10 +5,13 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from './firebase';
 
+type Plan = 'silver' | 'gold' | 'platinum';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isPremium: boolean;
+  subscriptionPlan: Plan | null;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -17,6 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlan] = useState<Plan | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -24,33 +28,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
 
       if (firebaseUser) {
-        // Check local storage first for premium status set by payment flow
-        const premiumStatus = localStorage.getItem('isPremium');
-        if (premiumStatus === 'true') {
-          setIsPremium(true);
-        } else if (firebaseUser.email === 'premium@example.com') {
-          // Fallback for easy premium user testing
-          setIsPremium(true);
+        const subDataString = localStorage.getItem('shaadiCraftSubscription');
+        if (subDataString) {
+          try {
+            const subData = JSON.parse(subDataString);
+            const now = new Date();
+            
+            if (subData.expiry === 'lifetime' || (subData.expiry && new Date(subData.expiry) > now)) {
+              setIsPremium(true);
+              setSubscriptionPlan(subData.plan);
+            } else {
+              setIsPremium(false);
+              setSubscriptionPlan(null);
+              localStorage.removeItem('shaadiCraftSubscription'); 
+            }
+          } catch (e) {
+            console.error("Failed to parse subscription data", e);
+            setIsPremium(false);
+            setSubscriptionPlan(null);
+          }
         } else {
-          setIsPremium(false);
+           setIsPremium(false);
+           setSubscriptionPlan(null);
         }
       } else {
-        // Not logged in, not premium
         setIsPremium(false);
-        // Clean up local storage on logout
-        localStorage.removeItem('isPremium');
+        setSubscriptionPlan(null);
+        localStorage.removeItem('shaadiCraftSubscription');
       }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
-  // Also listen to storage events to sync across tabs
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'isPremium') {
-        setIsPremium(event.newValue === 'true');
+      if (event.key === 'shaadiCraftSubscription') {
+         window.location.reload();
       }
     };
 
@@ -64,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     loading,
     isPremium,
+    subscriptionPlan,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -62,7 +62,6 @@ export default function CheckoutPage() {
     if (plan && plans[plan]) {
       setSelectedPlanKey(plan);
     } else {
-      // Default to silver if no plan or invalid plan is specified
       setSelectedPlanKey('silver');
     }
   }, [searchParams]);
@@ -108,9 +107,31 @@ export default function CheckoutPage() {
 
           const result = await verifyPayment(verificationData);
 
-          if (result.success) {
-            localStorage.setItem('isPremium', 'true');
-            toast({ title: "Payment Successful!", description: "Welcome to Premium! You now have access to all features." });
+          if (result.success && selectedPlanKey) {
+            const now = new Date();
+            let expiryDate: string | null = 'lifetime';
+
+            if (planDetails.period.includes('month')) {
+              const expiry = new Date(now);
+              expiry.setDate(expiry.getDate() + 30);
+              expiryDate = expiry.toISOString();
+            } else if (planDetails.period.includes('year')) {
+               const expiry = new Date(now);
+               expiry.setFullYear(expiry.getFullYear() + 1);
+               expiryDate = expiry.toISOString();
+            }
+            
+            const subscriptionData = {
+              plan: selectedPlanKey,
+              purchaseDate: now.toISOString(),
+              expiry: expiryDate,
+              paymentId: response.razorpay_payment_id,
+            };
+
+            localStorage.setItem('shaadiCraftSubscription', JSON.stringify(subscriptionData));
+            
+            toast({ title: "Payment Successful!", description: `Welcome to the ${planDetails.name}! You now have access to all its features.` });
+            
             // Force a reload of the context by navigating.
             router.push('/create');
             router.refresh();
