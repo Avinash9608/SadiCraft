@@ -210,9 +210,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userDocRef = doc(db, 'users', user.uid);
 
     try {
-        let newSubscription: SubscriptionData;
-        const newFeatures = planFeatures[plan]; 
-
         const now = new Date();
         const startDate = Timestamp.fromDate(now);
         let expiryDate: Timestamp | null = null;
@@ -220,15 +217,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (plan === 'silver' || plan === 'gold') {
           expiryDate = Timestamp.fromDate(new Date(new Date().setFullYear(now.getFullYear() + 1)));
         }
-        // For 'platinum' (lifetime) and 'free', expiryDate remains null
 
-        newSubscription = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
+        const newSubscription: SubscriptionData = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
+        const newFeatures = planFeatures[plan]; 
         
-        // Using setDoc with merge:true to ensure it's a non-destructive update
+        // First, write the new plan to the database
         await setDoc(userDocRef, {
             subscription: newSubscription,
             features: newFeatures,
         }, { merge: true });
+
+        // Then, perform an optimistic local state update for an instant UI change.
+        // This prevents the user from waiting for the Firestore listener to fire.
+        setSubscription(newSubscription);
+        setFeatures(newFeatures);
+        setIsPremium(newSubscription.isActive);
 
     } catch (error) {
         console.error("Error updating user plan:", error);
