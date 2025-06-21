@@ -54,7 +54,7 @@ export default function LandingPage() {
                     Welcome, {authContext.user.displayName?.split(' ')[0] || 'User'}
                   </span>
                    <Button variant="outline" asChild>
-                      <Link href="/create"><UserIcon className="mr-2 h-4 w-4" /> My Biodata</Link>
+                      <Link href="/create"><UserIcon className="mr-2 h-4 w-4" /> My Dashboard</Link>
                   </Button>
                   <Button variant="ghost" onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" /> Logout
@@ -66,7 +66,7 @@ export default function LandingPage() {
                       <Link href="/login">Log In</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/register">Create Free Biodata</Link>
+                    <Link href="/register">Get Started</Link>
                   </Button>
                 </>
               )}
@@ -87,7 +87,7 @@ export default function LandingPage() {
             <div className="flex justify-center gap-4">
               <Button size="lg" asChild>
                 <Link href={authContext?.user ? '/create' : '/register'}>
-                  Get Started for Free <ArrowRight className="ml-2 h-4 w-4" />
+                  Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
                <Button size="lg" variant="outline" asChild>

@@ -54,14 +54,14 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 // Central source of truth for features per plan, based on the provided spec
 export const planFeatures: Record<Plan, Features> = {
   free: {
-    unlimitedViews: false, // Limited to 5/day, but flag is false
-    unlimitedInterests: false, // Limited to 3/month, but flag is false
+    unlimitedViews: false,
+    unlimitedInterests: false,
     contactAccess: false,
     priorityListing: false,
     advancedFilters: false,
     adFree: false,
     verifiedBadge: false,
-    allTemplates: false, // Access to 'modern' only
+    allTemplates: false,
     videoProfile: false,
     whatsAppAlerts: false,
     astroReports: 0,
@@ -110,7 +110,7 @@ export const planFeatures: Record<Plan, Features> = {
     videoProfile: true,
     whatsAppAlerts: true,
     astroReports: 10,
-    remainingBoosts: 1, // Assumes a backend process handles monthly renewal
+    remainingBoosts: 1, 
     relationshipManager: true,
   },
 };
@@ -135,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (loading) {
         setLoading(false);
       }
-    }, 5000); // Shortened timeout
+    }, 5000);
 
     let firestoreUnsubscribe: (() => void) | null = null;
 
@@ -221,14 +221,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const newSubscription: SubscriptionData = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
         const newFeatures = planFeatures[plan]; 
         
-        // First, write the new plan to the database
         await setDoc(userDocRef, {
             subscription: newSubscription,
             features: newFeatures,
         }, { merge: true });
 
-        // Then, perform an optimistic local state update for an instant UI change.
-        // This prevents the user from waiting for the Firestore listener to fire.
+        // Optimistic update for instant UI feedback
         setSubscription(newSubscription);
         setFeatures(newFeatures);
         setIsPremium(newSubscription.isActive);
