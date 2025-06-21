@@ -26,9 +26,7 @@ try {
     "and environment variable configurations.",
     error
   );
-  // Re-throw the error to make it clear that AI initialization failed,
-  // which will likely cause the application to fail if AI features are critical at startup.
-  throw error;
+  // Do not re-throw the error. This allows the server to start even if AI features are disabled.
 }
 
 export const ai = initializedAI;
