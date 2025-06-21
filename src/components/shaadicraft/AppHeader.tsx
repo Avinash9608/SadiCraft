@@ -60,10 +60,15 @@ const AppHeader: React.FC<AppHeaderProps> = ({ form, onDownloadPdf }) => {
               Download PDF
             </Button>
             {authContext?.user && (
-              <Button onClick={handleLogout} variant="destructive" className="w-full sm:w-auto">
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
+               <div className="flex items-center gap-4">
+                <span className="text-sm font-medium hidden sm:inline">
+                    Hi, {authContext.user.displayName?.split(' ')[0] || 'User'}
+                </span>
+                <Button onClick={handleLogout} variant="destructive" className="w-full sm:w-auto">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                </Button>
+              </div>
             )}
           </div>
         </Form>

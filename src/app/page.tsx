@@ -1,11 +1,41 @@
 
+"use client";
+
+import { useContext } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import FeatureTable from '@/components/shaadicraft/FeatureTable';
 import PricingCard from '@/components/shaadicraft/PricingCard';
-import { FileText, ArrowRight, Star, Video, MessageCircle, BarChart } from 'lucide-react';
+import { FileText, ArrowRight, Star, Video, MessageCircle, BarChart, LogOut, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
+import { AuthContext } from '@/lib/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { Spinner } from '@/components/Spinner';
 
 export default function LandingPage() {
+  const authContext = useContext(AuthContext);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      router.push('/');
+    } catch (error) {
+      console.error("Logout Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: "There was an issue logging you out. Please try again.",
+      });
+    }
+  };
+  
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
@@ -16,12 +46,30 @@ export default function LandingPage() {
             <h1 className="text-3xl font-headline font-bold text-primary">ShaadiCraft</h1>
           </Link>
           <div className="flex items-center gap-2">
-             <Button variant="ghost" asChild>
-                <Link href="/login">Log In</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">Create Free Biodata</Link>
-            </Button>
+             {authContext?.loading ? (
+                <Spinner className="h-6 w-6" />
+              ) : authContext?.user ? (
+                <>
+                  <span className="text-sm font-medium hidden sm:inline">
+                    Welcome, {authContext.user.displayName?.split(' ')[0] || 'User'}
+                  </span>
+                   <Button variant="outline" asChild>
+                      <Link href="/create"><UserIcon className="mr-2" /> My Biodata</Link>
+                  </Button>
+                  <Button variant="ghost" onClick={handleLogout}>
+                      <LogOut className="mr-2" /> Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild>
+                      <Link href="/login">Log In</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/register">Create Free Biodata</Link>
+                  </Button>
+                </>
+              )}
           </div>
         </div>
       </header>
