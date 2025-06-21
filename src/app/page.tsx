@@ -21,11 +21,13 @@ export default function LandingPage() {
   const handleLogout = async () => {
     try {
       await auth.signOut();
+      localStorage.removeItem('isPremium'); // Clear premium status on logout
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
       });
       router.push('/');
+      router.refresh();
     } catch (error) {
       console.error("Logout Error:", error);
       toast({
@@ -163,7 +165,7 @@ export default function LandingPage() {
                 ]}
                 buttonText="Upgrade Now"
                 isPopular
-                buttonLink="/checkout"
+                buttonLink="/checkout?plan=monthly"
               />
               <PricingCard
                 title="Premium Yearly"
@@ -177,7 +179,7 @@ export default function LandingPage() {
                     "Video Profile Upload",
                 ]}
                 buttonText="Choose Yearly"
-                buttonLink="/checkout"
+                buttonLink="/checkout?plan=yearly"
               />
             </div>
           </div>
