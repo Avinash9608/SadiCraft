@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -20,7 +21,7 @@ import SectionTitle from './SectionTitle';
 import { Spinner } from '@/components/Spinner';
 
 import type { BiodataFormValues } from '@/lib/zod-schemas';
-import { generateIntro, type GenerateIntroInput } from '@/ai/flows/generate-intro';
+import type { GenerateIntroInput } from '@/ai/flows/generate-intro';
 import { useToast } from "@/hooks/use-toast";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 
@@ -48,6 +49,7 @@ const BiodataForm: React.FC<BiodataFormProps> = ({ form }) => {
   const handleGenerateIntro = async () => {
     setIsGeneratingIntro(true);
     try {
+      const { generateIntro } = await import('@/ai/flows/generate-intro');
       const formData = form.getValues();
       const aiInput = prepareAiInput(formData);
       const result = await generateIntro(aiInput);
