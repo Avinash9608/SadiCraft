@@ -16,6 +16,7 @@ export interface SubscriptionData {
   paymentId?: string;
 }
 
+// Corresponds to the detailed feature list
 export interface Features {
   unlimitedViews: boolean;
   contactAccess: boolean;
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
-
+    
     const loadingTimeout = setTimeout(() => {
       if (loading) {
         console.warn("AuthContext: Loading timed out after 10 seconds. Forcing UI to render.");
@@ -79,26 +80,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const data = docSnap.data();
             const sub = data.subscription as SubscriptionData;
             
-            // Check if subscription is active
             const now = Timestamp.now();
-            const isActive = sub && sub.isActive && (sub.expiryDate === null || (sub.expiryDate && sub.expiryDate > now));
+            let isActive = sub?.isActive && (sub.expiryDate === null || (sub.expiryDate && sub.expiryDate > now));
             
-            // If subscription has expired, update it in DB (this could also be a daily cloud function)
-            if (sub && sub.isActive && !isActive) {
-                console.log("Subscription expired, updating status.");
+            // If subscription has expired, update it in the DB (can also be a daily cloud function)
+            if (sub?.isActive && !isActive) {
+                console.log("Subscription expired for user:", firebaseUser.uid, "Updating status.");
                 updateDoc(userDocRef, { 'subscription.isActive': false });
+                // Here you would also reset features to free tier, ideally via a cloud function
             }
 
             setIsPremium(isActive);
             setSubscription(sub);
             setFeatures(data.features as Features);
-
-          } else {
-             // This case handles a logged-in user who doesn't have a DB entry yet.
-             // This can happen if registration is interrupted.
-            console.log("User document not found, creating one for:", firebaseUser.uid);
-            // Default data structures are now created on registration page.
-            // If we reach here, something went wrong, but we can try to recover.
           }
           setLoading(false);
           clearTimeout(loadingTimeout);
@@ -135,9 +129,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const now = new Date();
       const startDate = Timestamp.fromDate(now);
-      let expiryDate: Timestamp | null = Timestamp.fromDate(new Date(now.setFullYear(now.getFullYear() + 1)));
+      // Default expiry is 1 year, null for platinum
+      let expiryDate: Timestamp | null = Timestamp.fromDate(new Date(new Date().setFullYear(now.getFullYear() + 1)));
 
-      // Common features for all premium plans
+      // Base features for any premium plan
       const basePremiumFeatures = {
         unlimitedViews: true,
         contactAccess: true,
@@ -161,12 +156,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             videoProfile: true, 
             whatsAppAlerts: true, 
             astroReports: 10,
-            relationshipManager: true, // This might need a date check on the client
-            // Boosts would be handled by a backend function, but we can set the first one
-            remainingBoosts: 1
+            relationshipManager: true, 
+            remainingBoosts: 1 // Award first boost
         };
       } else {
-        return; // Invalid plan
+        return; // Should not happen
       }
 
       await updateDoc(userDocRef, {

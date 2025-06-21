@@ -98,13 +98,16 @@ export default function LandingPage() {
         </section>
 
         {/* Ad Placeholder */}
-        <section className="py-8">
-          <div className="container mx-auto flex justify-center">
-            <div className="w-[728px] h-[90px] bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
-              <p className="text-muted-foreground">Advertisement (728x90)</p>
+        {(!authContext?.features || !authContext.features.adFree) && (
+            <section className="py-8">
+            <div className="container mx-auto flex justify-center">
+                <div className="w-[728px] h-[90px] bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
+                <p className="text-muted-foreground">Advertisement (728x90)</p>
+                </div>
             </div>
-          </div>
-        </section>
+            </section>
+        )}
+
 
         {/* Feature Comparison Section */}
         <section id="features" className="py-16 md:py-24">

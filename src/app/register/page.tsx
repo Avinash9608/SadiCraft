@@ -58,13 +58,15 @@ export default function RegisterPage() {
         displayName: fullName,
       });
 
+      // Default subscription for a new user is 'free'
       const defaultSub: SubscriptionData = {
         plan: "free",
         startDate: null,
         expiryDate: null,
-        isActive: false,
+        isActive: false, // A free plan is never 'active' in the premium sense
       };
 
+      // Default features for a free user
       const defaultFeatures: Features = {
         unlimitedViews: false,
         contactAccess: false,
@@ -73,14 +75,14 @@ export default function RegisterPage() {
         priorityListing: false,
         advancedFilters: false,
         verifiedBadge: false,
-        allTemplates: false,
+        allTemplates: false, // Free users do not have access to all templates
         whatsAppAlerts: false,
         astroReports: 0,
         remainingBoosts: 0,
         relationshipManager: false,
       };
 
-      // Create user document in Firestore with default values
+      // Create user document in Firestore with default free-tier values
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         name: fullName,

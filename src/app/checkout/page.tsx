@@ -65,6 +65,7 @@ export default function CheckoutPage() {
     if (plan && products[plan]) {
       setSelectedProductKey(plan);
     } else {
+      // Default to home if no valid plan is provided
       router.push('/#pricing');
     }
   }, [searchParams, router]);
@@ -97,7 +98,7 @@ export default function CheckoutPage() {
         amount: order.amount,
         currency: order.currency,
         name: "ShaadiCraft",
-        description: `${productDetails.name}`,
+        description: `Purchase of ${productDetails.name}`,
         order_id: order.id,
         handler: async function (response: any) {
           const verificationData = {
@@ -108,8 +109,9 @@ export default function CheckoutPage() {
           const result = await verifyPayment(verificationData);
 
           if (result.success && selectedProductKey) {
+            // This now updates Firestore, and AuthContext will react to it in real-time
             await authContext.updateUserPlan(selectedProductKey as Plan, response.razorpay_payment_id);
-            toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! You now have access to all its features.` });
+            toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! Your features are now active.` });
             router.push('/create');
           } else {
             toast({ variant: 'destructive', title: 'Payment Verification Failed', description: 'Please contact support.' });
