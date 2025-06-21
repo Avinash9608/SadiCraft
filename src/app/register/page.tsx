@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!auth) {
+    if (!auth || !db) {
       toast({
         variant: 'destructive',
         title: 'Registration Failed',
@@ -54,6 +55,24 @@ export default function RegisterPage() {
       // Add full name to user's profile
       await updateProfile(user, {
         displayName: fullName,
+      });
+
+      // Create user document in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        name: fullName,
+        subscription: {
+          plan: "free",
+          expiry: null,
+          isActive: false,
+        },
+        unlockedFeatures: {
+          traditionalTemplates: false,
+          adFree: false,
+          videoProfile: false,
+          modernDownload: false,
+          traditionalDownload: false,
+        }
       });
 
       toast({

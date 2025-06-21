@@ -1,6 +1,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 // IMPORTANT: 
 // Create a file named .env.local in the root of your project
@@ -26,6 +27,7 @@ const firebaseConfig = {
 
 let app: FirebaseApp;
 let auth: Auth;
+let db: Firestore;
 
 // Check if the essential Firebase config is provided
 const isFirebaseConfigProvided = firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId;
@@ -33,6 +35,7 @@ const isFirebaseConfigProvided = firebaseConfig.apiKey && firebaseConfig.authDom
 if (isFirebaseConfigProvided) {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
+    db = getFirestore(app);
 } else {
     // If config is not provided, we cannot initialize Firebase.
     // To prevent the app from crashing, we'll export dummy objects.
@@ -43,7 +46,8 @@ if (isFirebaseConfigProvided) {
     );
     app = null as any; // Using any to satisfy the type system for the dummy export
     auth = null as any;
+    db = null as any;
 }
 
 
-export { app, auth };
+export { app, auth, db };

@@ -21,7 +21,7 @@ const TraditionalLayoutLock: React.FC = () => (
     <Lock className="h-16 w-16 text-primary mb-4" />
     <h3 className="text-2xl font-bold text-primary-foreground mb-2 text-center">Unlock Traditional Layout</h3>
     <p className="text-center text-primary-foreground/80 mb-6 max-w-xs">
-      Unlock this beautiful layout for just ₹10, or upgrade to a subscription for full access to all features.
+      Unlock this beautiful layout for a one-time payment of just ₹10, or upgrade to a subscription for full access.
     </p>
     <div className="flex flex-col gap-2 w-full max-w-xs">
        <Button asChild size="lg">
@@ -43,15 +43,7 @@ const TraditionalLayoutLock: React.FC = () => (
 const BiodataPreview: React.FC<BiodataPreviewProps> = ({ data, isDirty }) => {
   const [isLoading, setIsLoading] = useState(true);
   const authContext = useContext(AuthContext);
-  const [isTraditionalUnlocked, setIsTraditionalUnlocked] = useState(false);
-
-  useEffect(() => {
-    // Check session storage on mount and whenever the layout data might change
-    const unlocked = sessionStorage.getItem('traditional_unlocked') === 'true';
-    setIsTraditionalUnlocked(unlocked);
-  }, [data.layout]);
-
-
+  
   useEffect(() => {
     if (isDirty || data.fullName) {
       setIsLoading(false);
@@ -80,7 +72,8 @@ const BiodataPreview: React.FC<BiodataPreviewProps> = ({ data, isDirty }) => {
   }
 
   const isPremiumLayout = data.layout === 'traditional';
-  const showLock = isPremiumLayout && !authContext?.isPremium && !isTraditionalUnlocked;
+  const traditionalUnlocked = authContext?.unlockedFeatures?.traditionalTemplates ?? false;
+  const showLock = isPremiumLayout && !authContext?.isPremium && !traditionalUnlocked;
 
   const layoutComponent = data.layout === 'modern' 
     ? <ModernLayout data={data} /> 

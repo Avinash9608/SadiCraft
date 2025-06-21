@@ -5,6 +5,7 @@ import React, { useCallback, useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Timestamp } from 'firebase/firestore';
 
 import { biodataSchema, type BiodataFormValues, defaultBiodataValues } from '@/lib/zod-schemas';
 import { AuthContext } from '@/lib/AuthContext';
@@ -31,17 +32,25 @@ export default function ShaadiCraftPage() {
   const { formState: { isDirty }, reset, setValue } = form;
   const { toast } = useToast();
 
-  const triggerPdfDownload = useCallback(async () => {
+  const triggerPdfDownload = useCallback(async (layout: 'modern' | 'traditional') => {
     if (typeof window !== 'undefined') {
       const html2pdf = (await import('html2pdf.js')).default;
+
+      // Temporarily switch layout if needed for the PDF
+      const originalLayout = form.getValues('layout');
+      if (originalLayout !== layout) {
+        setValue('layout', layout, { shouldDirty: true });
+        // Allow a tick for React to re-render with the correct layout
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
 
       const element = document.getElementById('biodata-preview-content');
       const currentData = form.getValues();
 
       if (element && html2pdf) {
         const filename = currentData.fullName
-          ? `${currentData.fullName.replace(/\s+/g, '_')}_Biodata.pdf`
-          : 'biodata.pdf';
+          ? `${currentData.fullName.replace(/\s+/g, '_')}_Biodata_${layout}.pdf`
+          : `biodata_${layout}.pdf`;
 
         const opt = {
           margin:       0.5,
@@ -59,42 +68,32 @@ export default function ShaadiCraftPage() {
               title: "PDF Generation Failed",
               description: "There was an error generating the PDF. Please try again.",
             });
+          }).finally(() => {
+              // Switch back to original layout after download
+              if (originalLayout !== layout) {
+                setValue('layout', originalLayout);
+              }
           });
       }
     }
-  }, [form, toast]);
+  }, [form, toast, setValue]);
 
   const handleDownloadPdf = useCallback(async () => {
-    if (!authContext) return;
+    if (!authContext?.unlockedFeatures) return;
 
-    const isPremium = authContext.isPremium;
+    const { isPremium, unlockedFeatures } = authContext;
     const layout = form.getValues('layout');
     
-    // Premium users can download anything for free
-    if (isPremium) {
-      triggerPdfDownload();
-      return;
-    }
-
-    // Check for one-time payments if not premium
-    const modernDownloadUnlocked = sessionStorage.getItem('modern_download_unlocked') === 'true';
-    const traditionalUnlocked = sessionStorage.getItem('traditional_unlocked') === 'true';
-
     if (layout === 'modern') {
-      if (modernDownloadUnlocked) {
-        triggerPdfDownload();
+      if (isPremium || unlockedFeatures.modernDownload) {
+        triggerPdfDownload('modern');
       } else {
         router.push('/checkout?action=download_modern');
       }
     } else if (layout === 'traditional') {
-      if (traditionalUnlocked) {
-        triggerPdfDownload();
+      if (isPremium || unlockedFeatures.traditionalDownload) {
+        triggerPdfDownload('traditional');
       } else {
-        toast({
-          variant: "destructive",
-          title: "Upgrade Required",
-          description: "Please purchase this layout to download.",
-        });
         router.push('/checkout?action=download_traditional&return_to_layout=traditional');
       }
     }
@@ -122,7 +121,7 @@ export default function ShaadiCraftPage() {
     }
   }, [watchedValues, isDirty]);
   
-  // Auth Guard and redirect logic
+  // Auth Guard
   useEffect(() => {
     if (authContext && !authContext.loading && !authContext.user) {
       router.push('/login');
@@ -134,28 +133,26 @@ export default function ShaadiCraftPage() {
     const layoutParam = searchParams.get('layout');
     if (layoutParam === 'modern' || layoutParam === 'traditional') {
       setValue('layout', layoutParam, { shouldDirty: true });
+      // Clean the URL
       const newUrl = window.location.pathname;
       window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
     }
   }, [searchParams, setValue]); 
 
-  // Effect to handle post-payment download for modern layout
+  // Effect to handle post-payment download
   useEffect(() => {
-    const modernDownloadUnlocked = sessionStorage.getItem('modern_download_unlocked') === 'true';
-    if (modernDownloadUnlocked) {
-      sessionStorage.removeItem('modern_download_unlocked'); // Use the unlock flag once
-      triggerPdfDownload();
+    const downloadPending = searchParams.get('download_pending');
+    if (downloadPending) {
+        if(downloadPending === 'modern' && authContext?.unlockedFeatures?.modernDownload) {
+            triggerPdfDownload('modern');
+        } else if (downloadPending === 'traditional' && authContext?.unlockedFeatures?.traditionalDownload) {
+            triggerPdfDownload('traditional');
+        }
+        // Clean the URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
     }
-  }, [triggerPdfDownload]);
-  
-  // Effect to handle post-payment download for traditional layout
-  useEffect(() => {
-    const traditionalDownloadPending = sessionStorage.getItem('traditional_download_pending') === 'true';
-    if (traditionalDownloadPending) {
-      sessionStorage.removeItem('traditional_download_pending'); // Use the flag once
-      triggerPdfDownload();
-    }
-  }, [triggerPdfDownload]);
+  }, [searchParams, authContext, triggerPdfDownload]);
 
 
   if (authContext?.loading || !authContext?.user) {

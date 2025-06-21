@@ -3,24 +3,34 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
+import { doc, onSnapshot, updateDoc, Timestamp, setDoc } from 'firebase/firestore';
 
-type Plan = 'silver' | 'gold' | 'platinum';
+export type Plan = 'free' | 'silver' | 'gold' | 'platinum';
 
-// Define a reusable type for subscription data, making it available for other components
 export interface SubscriptionData {
   plan: Plan;
-  purchaseDate: string;
-  expiry: string | null;
-  paymentId: string;
+  expiry: Timestamp | null;
+  isActive: boolean;
+  paymentId?: string;
+}
+
+export interface UnlockedFeatures {
+  traditionalTemplates: boolean;
+  adFree: boolean;
+  videoProfile: boolean;
+  modernDownload: boolean;
+  traditionalDownload: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isPremium: boolean;
-  subscriptionPlan: Plan | null;
-  updateSubscription: (data: SubscriptionData | null) => void;
+  subscription: SubscriptionData | null;
+  unlockedFeatures: UnlockedFeatures | null;
+  updateSubscription: (data: Partial<SubscriptionData>) => Promise<void>;
+  updateUnlockedFeatures: (data: Partial<UnlockedFeatures>) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,72 +39,86 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
-  const [subscriptionPlan, setSubscriptionPlan] = useState<Plan | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [unlockedFeatures, setUnlockedFeatures] = useState<UnlockedFeatures | null>(null);
 
-  // Centralized function to check subscription status from a string
-  const checkSubscription = useCallback((subDataString: string | null) => {
-    if (subDataString) {
-      try {
-        const subData: SubscriptionData = JSON.parse(subDataString);
-        const now = new Date();
-        
-        if (subData.expiry === 'lifetime' || (subData.expiry && new Date(subData.expiry) > now)) {
-          setIsPremium(true);
-          setSubscriptionPlan(subData.plan);
-        } else {
-          // Subscription expired, clear it
-          setIsPremium(false);
-          setSubscriptionPlan(null);
-          localStorage.removeItem('shaadiCraftSubscription'); 
-        }
-      } catch (e) {
-        console.error("Failed to parse subscription data", e);
-        setIsPremium(false);
-        setSubscriptionPlan(null);
-      }
-    } else {
-       // No subscription data found
-       setIsPremium(false);
-       setSubscriptionPlan(null);
-    }
-  }, []);
-
-  // New function to allow other components to update the subscription state
-  const updateSubscription = useCallback((data: SubscriptionData | null) => {
-    if (data) {
-      const subDataString = JSON.stringify(data);
-      localStorage.setItem('shaadiCraftSubscription', subDataString);
-      checkSubscription(subDataString); // Immediately update the app state
-    } else {
-      localStorage.removeItem('shaadiCraftSubscription');
-      checkSubscription(null); // Clear subscription state on explicit null
-    }
-  }, [checkSubscription]);
-
-  // Main effect to handle user authentication state changes
   useEffect(() => {
+    if (!db) {
+        setLoading(false);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      setLoading(false);
-
       if (firebaseUser) {
-        // On load or login, check the stored subscription
-        checkSubscription(localStorage.getItem('shaadiCraftSubscription'));
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        
+        const unsubFromDoc = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const sub = data.subscription as SubscriptionData;
+
+            // Check if subscription is active
+            const now = Timestamp.now();
+            const isActive = sub && sub.isActive && (sub.expiry === null || sub.expiry > now);
+
+            setIsPremium(isActive);
+            setSubscription(sub);
+            setUnlockedFeatures(data.unlockedFeatures as UnlockedFeatures);
+          } else {
+            // This case handles users who registered before Firestore documents were created.
+            // Create a default document for them.
+            setDoc(userDocRef, {
+              email: firebaseUser.email,
+              name: firebaseUser.displayName,
+              subscription: { plan: "free", expiry: null, isActive: false },
+              unlockedFeatures: {
+                traditionalTemplates: false, adFree: false, videoProfile: false,
+                modernDownload: false, traditionalDownload: false
+              }
+            });
+          }
+          setLoading(false);
+        }, (error) => {
+            console.error("Error listening to user document:", error);
+            setLoading(false);
+        });
+        
+        return () => unsubFromDoc();
+
       } else {
-        // On logout, clear all subscription info
-        updateSubscription(null);
+        // User is logged out
+        setIsPremium(false);
+        setSubscription(null);
+        setUnlockedFeatures(null);
+        setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [checkSubscription, updateSubscription]);
+  }, []);
+
+  const updateSubscription = useCallback(async (data: Partial<SubscriptionData>) => {
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, { subscription: { ...subscription, ...data } });
+    }
+  }, [user, subscription]);
+
+  const updateUnlockedFeatures = useCallback(async (data: Partial<UnlockedFeatures>) => {
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, { unlockedFeatures: { ...unlockedFeatures, ...data } });
+    }
+  }, [user, unlockedFeatures]);
 
   const value = {
     user,
     loading,
     isPremium,
-    subscriptionPlan,
-    updateSubscription, // Expose the update function through the context
+    subscription,
+    unlockedFeatures,
+    updateSubscription,
+    updateUnlockedFeatures,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

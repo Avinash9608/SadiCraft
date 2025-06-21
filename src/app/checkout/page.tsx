@@ -4,6 +4,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
+import { Timestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -29,7 +30,8 @@ const products = {
     price: 299,
     period: '/month',
     description: 'Unlock core premium features for 30 days.',
-    icon: Star
+    icon: Star,
+    durationDays: 30,
   },
   gold: {
     id: 'plan_gold_yearly',
@@ -37,7 +39,8 @@ const products = {
     price: 2499,
     period: '/year',
     description: 'Best value with all features for a full year.',
-    icon: Star
+    icon: Star,
+    durationDays: 365,
   },
   platinum: {
     id: 'plan_platinum_lifetime',
@@ -45,7 +48,8 @@ const products = {
     price: 4999,
     period: 'one-time',
     description: 'Lifetime access and exclusive monthly perks.',
-    icon: Star
+    icon: Star,
+    durationDays: null, // Lifetime
   },
   // One-time Actions
   download_modern: {
@@ -93,17 +97,16 @@ export default function CheckoutPage() {
     if (productKey && products[productKey]) {
       setSelectedProductKey(productKey);
     } else {
-      // Default to a base plan if nothing is selected, or show an error
-      setSelectedProductKey('silver');
+      router.push('/create');
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handlePayment = async () => {
     setIsLoading(true);
 
-    if (!authContext?.user || !authContext.updateSubscription) {
+    if (!authContext?.user || !authContext.updateSubscription || !authContext.updateUnlockedFeatures) {
       toast({ variant: 'destructive', title: 'Not Logged In', description: 'Please log in to make a purchase.' });
-      if (!authContext.user) router.push('/login');
+      if (!authContext?.user) router.push('/login');
       setIsLoading(false);
       return;
     }
@@ -139,38 +142,38 @@ export default function CheckoutPage() {
           if (result.success && selectedProductKey) {
             const isSubscription = ['silver', 'gold', 'platinum'].includes(selectedProductKey);
             const returnToLayout = searchParams.get('return_to_layout');
-            const redirectUrl = returnToLayout ? `/create?layout=${returnToLayout}` : '/create';
-
+            let redirectUrl = returnToLayout ? `/create?layout=${returnToLayout}` : '/create';
 
             if (isSubscription) {
-                const now = new Date();
-                let expiryDate: string | null = null;
-                if (selectedProductKey === 'platinum') expiryDate = 'lifetime';
-                else if (selectedProductKey === 'silver') expiryDate = new Date(now.setDate(now.getDate() + 30)).toISOString();
-                else if (selectedProductKey === 'gold') expiryDate = new Date(now.setFullYear(now.getFullYear() + 1)).toISOString();
+                const subProduct = products[selectedProductKey as 'silver' | 'gold' | 'platinum'];
+                let expiryDate: Timestamp | null = null;
+                if (subProduct.durationDays) {
+                    const now = new Date();
+                    now.setDate(now.getDate() + subProduct.durationDays);
+                    expiryDate = Timestamp.fromDate(now);
+                }
 
-                const subscriptionData: SubscriptionData = {
+                const subscriptionData: Partial<SubscriptionData> = {
                   plan: selectedProductKey as 'silver' | 'gold' | 'platinum',
-                  purchaseDate: new Date().toISOString(),
                   expiry: expiryDate,
+                  isActive: true,
                   paymentId: response.razorpay_payment_id,
                 };
-                authContext.updateSubscription(subscriptionData);
+                await authContext.updateSubscription(subscriptionData);
                 toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! You now have access to all its features.` });
                 router.push(redirectUrl);
             } else if (selectedProductKey === 'download_modern') {
-                sessionStorage.setItem('modern_download_unlocked', 'true');
+                await authContext.updateUnlockedFeatures({ modernDownload: true });
                 toast({ title: "Purchase Successful!", description: "Your download will begin shortly." });
-                router.push('/create');
+                router.push('/create?download_pending=modern');
             } else if (selectedProductKey === 'unlock_traditional') {
-                sessionStorage.setItem('traditional_unlocked', 'true');
+                await authContext.updateUnlockedFeatures({ traditionalTemplates: true });
                 toast({ title: "Purchase Successful!", description: "Traditional layout has been unlocked." });
                 router.push(redirectUrl);
             } else if (selectedProductKey === 'download_traditional') {
-                sessionStorage.setItem('traditional_unlocked', 'true'); // Unlock viewing
-                sessionStorage.setItem('traditional_download_pending', 'true'); // Trigger download
+                await authContext.updateUnlockedFeatures({ traditionalTemplates: true, traditionalDownload: true });
                 toast({ title: "Purchase Successful!", description: "Your download will begin shortly." });
-                router.push(redirectUrl);
+                router.push(redirectUrl + "?download_pending=traditional");
             }
           } else {
             toast({ variant: 'destructive', title: 'Payment Verification Failed', description: 'Please contact support.' });
