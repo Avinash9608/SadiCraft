@@ -1,19 +1,75 @@
 
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FileText } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from "@/hooks/use-toast";
+import { Spinner } from '@/components/Spinner';
 
 export default function RegisterPage() {
-  const handleSubmit = (e: React.FormEvent) => {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement registration logic with Firebase
-    alert('Registration functionality to be implemented with Firebase.');
-    console.log('Registration form submitted');
+    setIsLoading(true);
+
+    if (!fullName) {
+        toast({
+            variant: "destructive",
+            title: "Registration Failed",
+            description: "Please enter your full name.",
+        });
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Add full name to user's profile
+      await updateProfile(user, {
+        displayName: fullName,
+      });
+
+      toast({
+        title: "Account Created",
+        description: "You have successfully registered. Redirecting...",
+      });
+
+      router.push('/create');
+
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      let errorMessage = "An unknown error occurred. Please try again.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email address is already in use.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'The password is too weak. It should be at least 6 characters.';
+      } else if (error.code) {
+        errorMessage = error.message;
+      }
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,18 +88,37 @@ export default function RegisterPage() {
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="full-name">Full Name</Label>
-                <Input id="full-name" placeholder="Avinash Kumar" required />
+                <Input 
+                  id="full-name" 
+                  placeholder="Avinash Kumar" 
+                  required 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" required />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  required 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
-              <Button type="submit" className="w-full">
-                Create an account
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? <Spinner /> : 'Create an account'}
               </Button>
             </div>
           </form>
