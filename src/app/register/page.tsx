@@ -14,24 +14,8 @@ import { FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from '@/components/Spinner';
-import type { SubscriptionData, Features } from '@/lib/AuthContext';
-
-// Default features for a new free user
-const defaultFeatures: Features = {
-    unlimitedViews: false,
-    unlimitedInterests: false,
-    contactAccess: false,
-    priorityListing: false,
-    advancedFilters: false,
-    adFree: false,
-    verifiedBadge: false,
-    allTemplates: false,
-    videoProfile: false,
-    whatsAppAlerts: false,
-    astroReports: 0,
-    remainingBoosts: 0,
-    relationshipManager: false,
-};
+import type { SubscriptionData, Features, Usage } from '@/lib/AuthContext';
+import { planFeatures } from '@/lib/AuthContext';
 
 
 export default function RegisterPage() {
@@ -83,6 +67,14 @@ export default function RegisterPage() {
         expiryDate: null,
         isActive: false, 
       };
+      
+      const defaultFeatures: Features = planFeatures.free;
+
+      const defaultUsage: Usage = {
+        profilesViewed: 0,
+        interestsSent: 0,
+        lastBoostUsed: null,
+      };
 
       // Create user document in Firestore with default free-tier values
       await setDoc(doc(db, "users", user.uid), {
@@ -91,6 +83,7 @@ export default function RegisterPage() {
         createdAt: Timestamp.now(),
         subscription: defaultSub,
         features: defaultFeatures,
+        usage: defaultUsage,
       });
 
       toast({

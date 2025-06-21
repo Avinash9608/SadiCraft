@@ -12,32 +12,32 @@ const features = [
       { name: 'Profile Views', free: '5 per day', silver: 'Unlimited', gold: 'Unlimited', platinum: 'Unlimited' },
       { name: 'Send Interests', free: '3 per month', silver: 'Unlimited', gold: 'Unlimited', platinum: 'Unlimited' },
       { name: 'Ad-Free Experience', free: false, silver: true, gold: true, platinum: true },
-      { name: 'All Biodata Templates', free: false, silver: true, gold: true, platinum: true },
+      { name: 'Biodata Templates', free: 'Modern Only', silver: 'All Templates', gold: 'All Templates', platinum: 'All Templates' },
     ]
   },
   { 
-    category: 'Communication', 
+    category: 'Communication & Visibility', 
     items: [
       { name: 'View Contact Details', free: false, silver: true, gold: true, platinum: true },
       { name: 'Advanced Search Filters', free: false, silver: true, gold: true, platinum: true },
-      { name: 'Priority Listing in Search', free: false, silver: true, gold: true, platinum: true },
+      { name: 'Priority Listing in Search', free: false, silver: false, gold: true, platinum: true },
+      { name: 'Verified Profile Badge', free: false, silver: true, gold: true, platinum: true },
     ]
   },
   { 
-    category: 'Profile Enhancement', 
+    category: 'Premium Perks', 
     items: [
-      { name: 'Verified Profile Badge', free: false, silver: true, gold: true, platinum: true },
       { name: 'Video Profile Upload', free: false, silver: false, gold: true, platinum: true },
-    ]
-  },
-  {
-    category: 'Exclusive Perks',
-    items: [
       { name: 'SMS/WhatsApp Match Alerts', free: false, silver: false, gold: true, platinum: true },
       { name: 'Astro Compatibility Reports', free: false, silver: false, gold: '5 Free', platinum: '10 Free' },
       { name: 'Monthly Profile Boosts', free: false, silver: false, gold: false, platinum: '1 per month' },
       { name: 'Dedicated Relationship Manager', free: false, silver: false, gold: false, platinum: 'First 3 Months' },
-      { name: 'Lifetime Validity', free: false, silver: false, gold: false, platinum: true },
+    ]
+  },
+    {
+    category: 'Plan Validity',
+    items: [
+      { name: 'Validity', free: 'N/A', silver: '1 Year', gold: '1 Year', platinum: 'Lifetime' },
     ]
   },
 ];

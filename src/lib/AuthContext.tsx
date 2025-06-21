@@ -16,13 +16,13 @@ export interface SubscriptionData {
   paymentId?: string;
 }
 
-// Corresponds to the detailed feature list from the prompt
+// Corresponds to the detailed feature list from the provided spec
 export interface Features {
   unlimitedViews: boolean;
-  unlimitedInterests: boolean; // Not fully implemented on client, but available
-  contactAccess: boolean; // Not fully implemented on client, but available
-  priorityListing: boolean; // Not fully implemented on client, but available
-  advancedFilters: boolean; // Not fully implemented on client, but available
+  unlimitedInterests: boolean;
+  contactAccess: boolean;
+  priorityListing: boolean;
+  advancedFilters: boolean;
   adFree: boolean;
   verifiedBadge: boolean;
   allTemplates: boolean;
@@ -33,28 +33,35 @@ export interface Features {
   relationshipManager: boolean;
 }
 
+export interface Usage {
+    profilesViewed: number;
+    interestsSent: number;
+    lastBoostUsed: Timestamp | null;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isPremium: boolean;
   subscription: SubscriptionData | null;
   features: Features | null;
+  usage: Usage | null;
   updateUserPlan: (plan: Plan, paymentId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Central source of truth for features per plan
-const planFeatures: Record<Plan, Features> = {
+// Central source of truth for features per plan, based on the provided spec
+export const planFeatures: Record<Plan, Features> = {
   free: {
-    unlimitedViews: false,
-    unlimitedInterests: false,
+    unlimitedViews: false, // Limited to 5/day, but flag is false
+    unlimitedInterests: false, // Limited to 3/month, but flag is false
     contactAccess: false,
     priorityListing: false,
     advancedFilters: false,
     adFree: false,
     verifiedBadge: false,
-    allTemplates: false,
+    allTemplates: false, // Access to 'modern' only
     videoProfile: false,
     whatsAppAlerts: false,
     astroReports: 0,
@@ -65,7 +72,7 @@ const planFeatures: Record<Plan, Features> = {
     unlimitedViews: true,
     unlimitedInterests: true,
     contactAccess: true,
-    priorityListing: true,
+    priorityListing: false,
     advancedFilters: true,
     adFree: true,
     verifiedBadge: true,
@@ -104,7 +111,7 @@ const planFeatures: Record<Plan, Features> = {
     whatsAppAlerts: true,
     astroReports: 10,
     remainingBoosts: 1, // Assumes a backend process handles monthly renewal
-    relationshipManager: true, // For the first 3 months, managed by backend logic
+    relationshipManager: true,
   },
 };
 
@@ -115,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isPremium, setIsPremium] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [features, setFeatures] = useState<Features | null>(planFeatures.free);
+  const [usage, setUsage] = useState<Usage | null>(null);
 
   useEffect(() => {
     if (!db || !auth) {
@@ -127,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (loading) {
         setLoading(false);
       }
-    }, 10000);
+    }, 5000); // Shortened timeout
 
     let firestoreUnsubscribe: (() => void) | null = null;
 
@@ -160,12 +168,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setIsPremium(isActive);
               setSubscription(sub);
               setFeatures((data.features as Features) || planFeatures.free);
+              setUsage((data.usage as Usage) || null);
             }
 
           } else {
             setIsPremium(false);
             setSubscription(null);
             setFeatures(planFeatures.free);
+            setUsage(null);
           }
           setLoading(false);
           clearTimeout(loadingTimeout);
@@ -179,6 +189,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsPremium(false);
         setSubscription(null);
         setFeatures(null);
+        setUsage(null);
         setLoading(false);
         clearTimeout(loadingTimeout);
       }
@@ -209,10 +220,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (plan === 'silver' || plan === 'gold') {
           expiryDate = Timestamp.fromDate(new Date(new Date().setFullYear(now.getFullYear() + 1)));
         }
-        // For 'platinum' and 'free', expiryDate remains null
+        // For 'platinum' (lifetime) and 'free', expiryDate remains null
 
         newSubscription = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
         
+        // Using setDoc with merge:true to ensure it's a non-destructive update
         await setDoc(userDocRef, {
             subscription: newSubscription,
             features: newFeatures,
@@ -230,6 +242,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isPremium,
     subscription,
     features,
+    usage,
     updateUserPlan,
   };
 

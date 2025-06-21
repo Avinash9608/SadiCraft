@@ -144,7 +144,7 @@ export default function LandingPage() {
                   "Basic Profile Creation",
                   "View 5 Profiles/Day",
                   "Send 3 Interests/Month",
-                  "Basic Search Filters",
+                  "Modern Biodata Template",
                   "Ad-Supported",
                 ]}
                 buttonText="Start for Free"
@@ -160,8 +160,7 @@ export default function LandingPage() {
                   "Unlimited Profile Views",
                   "Unlimited Interests",
                   "View Contact Details",
-                  "Priority Listing",
-                  "Advanced Filters",
+                  "Advanced Search Filters",
                   "Ad-Free Experience",
                   "Verified Profile Badge",
                   "All Biodata Templates",
@@ -177,6 +176,7 @@ export default function LandingPage() {
                 description="Best value for serious seekers."
                 features={[
                     "All Silver Features",
+                    "Priority Listing in Search",
                     "Video Profile Upload",
                     "SMS/WhatsApp Match Alerts",
                     "5 Free Astro Reports",
