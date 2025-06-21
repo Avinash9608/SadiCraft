@@ -16,6 +16,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Spinner } from '@/components/Spinner';
 import type { SubscriptionData, Features } from '@/lib/AuthContext';
 
+// Default features for a new free user
+const defaultFeatures: Features = {
+    unlimitedViews: false,
+    unlimitedInterests: false,
+    contactAccess: false,
+    priorityListing: false,
+    advancedFilters: false,
+    adFree: false,
+    verifiedBadge: false,
+    allTemplates: false,
+    videoProfile: false,
+    whatsAppAlerts: false,
+    astroReports: 0,
+    remainingBoosts: 0,
+    relationshipManager: false,
+};
+
+
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -63,23 +81,7 @@ export default function RegisterPage() {
         plan: "free",
         startDate: null,
         expiryDate: null,
-        isActive: false, // A free plan is never 'active' in the premium sense
-      };
-
-      // Default features for a free user
-      const defaultFeatures: Features = {
-        unlimitedViews: false,
-        contactAccess: false,
-        videoProfile: false,
-        adFree: false,
-        priorityListing: false,
-        advancedFilters: false,
-        verifiedBadge: false,
-        allTemplates: false, // Free users do not have access to all templates
-        whatsAppAlerts: false,
-        astroReports: 0,
-        remainingBoosts: 0,
-        relationshipManager: false,
+        isActive: false, 
       };
 
       // Create user document in Firestore with default free-tier values

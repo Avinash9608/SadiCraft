@@ -62,7 +62,6 @@ export default function CheckoutPage() {
   const { isPremium, loading: authLoading } = authContext ?? {};
 
   // Redirect if user is already premium.
-  // This handles the case where the user lands here, or their status updates while on the page.
   useEffect(() => {
     if (!authLoading && isPremium) {
       toast({
@@ -79,7 +78,6 @@ export default function CheckoutPage() {
     if (plan && products[plan]) {
       setSelectedProductKey(plan);
     } else {
-      // Default to home if no valid plan is provided
       router.push('/#pricing');
     }
   }, [searchParams, router]);
@@ -115,7 +113,7 @@ export default function CheckoutPage() {
         description: `Purchase of ${productDetails.name}`,
         order_id: order.id,
         handler: async function (response: any) {
-          setIsLoading(true); // Keep loading during verification and update
+          setIsLoading(true);
           try {
             const verificationData = {
               razorpay_order_id: response.razorpay_order_id,
@@ -128,14 +126,14 @@ export default function CheckoutPage() {
               const plan = selectedProductKey as Plan;
               await authContext.updateUserPlan(plan, response.razorpay_payment_id);
               toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! Your features are now active.` });
-              router.push('/create'); // Direct navigation after successful update
+              router.push('/create');
             } else {
               toast({ variant: 'destructive', title: 'Payment Verification Failed', description: result.message || 'Please contact support.' });
               setIsLoading(false);
             }
-          } catch (handlerError) {
+          } catch (handlerError: any) {
               console.error("Error in payment handler:", handlerError);
-              toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred after payment. Please contact support.' });
+              toast({ variant: 'destructive', title: 'Error', description: handlerError.message || 'An unexpected error occurred after payment. Please contact support.' });
               setIsLoading(false);
           }
         },
@@ -155,12 +153,13 @@ export default function CheckoutPage() {
         setIsLoading(false);
       });
       rzp.open();
+       setIsLoading(false); // Enable button again after rzp.open() is called
 
     } catch (error) {
       console.error("Payment error:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not initiate payment. Please try again.' });
+      setIsLoading(false);
     }
-     // Don't set isLoading to false here, the handler or failure callback will do it.
   };
   
   if (authLoading || !selectedProductKey) {

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import FeatureTable from '@/components/shaadicraft/FeatureTable';
 import PricingCard from '@/components/shaadicraft/PricingCard';
-import { FileText, ArrowRight, Star, Video, MessageCircle, BarChart, LogOut, User as UserIcon } from 'lucide-react';
+import { FileText, ArrowRight, Star, Video, BarChart, LogOut, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { AuthContext } from '@/lib/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -54,10 +54,10 @@ export default function LandingPage() {
                     Welcome, {authContext.user.displayName?.split(' ')[0] || 'User'}
                   </span>
                    <Button variant="outline" asChild>
-                      <Link href="/create"><UserIcon className="mr-2" /> My Biodata</Link>
+                      <Link href="/create"><UserIcon className="mr-2 h-4 w-4" /> My Biodata</Link>
                   </Button>
                   <Button variant="ghost" onClick={handleLogout}>
-                      <LogOut className="mr-2" /> Logout
+                      <LogOut className="mr-2 h-4 w-4" /> Logout
                   </Button>
                 </>
               ) : (
@@ -87,7 +87,7 @@ export default function LandingPage() {
             <div className="flex justify-center gap-4">
               <Button size="lg" asChild>
                 <Link href={authContext?.user ? '/create' : '/register'}>
-                  Get Started for Free <ArrowRight className="ml-2" />
+                  Get Started for Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
                <Button size="lg" variant="outline" asChild>
@@ -135,7 +135,7 @@ export default function LandingPage() {
                 Simple, transparent pricing for every need.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto items-stretch">
                <PricingCard
                 title="Free"
                 price="₹0"
@@ -187,7 +187,7 @@ export default function LandingPage() {
                <PricingCard
                 title="Platinum"
                 price="₹4,999"
-                period="/lifetime"
+                period="one-time"
                 description="One-time payment for lifetime access."
                 features={[
                   "All Gold Features",

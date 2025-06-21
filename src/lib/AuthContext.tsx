@@ -16,16 +16,17 @@ export interface SubscriptionData {
   paymentId?: string;
 }
 
-// Corresponds to the detailed feature list
+// Corresponds to the detailed feature list from the prompt
 export interface Features {
   unlimitedViews: boolean;
-  contactAccess: boolean;
-  videoProfile: boolean;
+  unlimitedInterests: boolean; // Not fully implemented on client, but available
+  contactAccess: boolean; // Not fully implemented on client, but available
+  priorityListing: boolean; // Not fully implemented on client, but available
+  advancedFilters: boolean; // Not fully implemented on client, but available
   adFree: boolean;
-  priorityListing: boolean;
-  advancedFilters: boolean;
   verifiedBadge: boolean;
   allTemplates: boolean;
+  videoProfile: boolean;
   whatsAppAlerts: boolean;
   astroReports: number;
   remainingBoosts: number;
@@ -43,28 +44,77 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Default features for a free user, used for initialization and resets.
-const defaultFeatures: Features = {
+// Central source of truth for features per plan
+const planFeatures: Record<Plan, Features> = {
+  free: {
     unlimitedViews: false,
+    unlimitedInterests: false,
     contactAccess: false,
-    videoProfile: false,
-    adFree: false,
     priorityListing: false,
     advancedFilters: false,
+    adFree: false,
     verifiedBadge: false,
     allTemplates: false,
+    videoProfile: false,
     whatsAppAlerts: false,
     astroReports: 0,
     remainingBoosts: 0,
     relationshipManager: false,
+  },
+  silver: {
+    unlimitedViews: true,
+    unlimitedInterests: true,
+    contactAccess: true,
+    priorityListing: true,
+    advancedFilters: true,
+    adFree: true,
+    verifiedBadge: true,
+    allTemplates: true,
+    videoProfile: false,
+    whatsAppAlerts: false,
+    astroReports: 0,
+    remainingBoosts: 0,
+    relationshipManager: false,
+  },
+  gold: {
+    unlimitedViews: true,
+    unlimitedInterests: true,
+    contactAccess: true,
+    priorityListing: true,
+    advancedFilters: true,
+    adFree: true,
+    verifiedBadge: true,
+    allTemplates: true,
+    videoProfile: true,
+    whatsAppAlerts: true,
+    astroReports: 5,
+    remainingBoosts: 0,
+    relationshipManager: false,
+  },
+  platinum: {
+    unlimitedViews: true,
+    unlimitedInterests: true,
+    contactAccess: true,
+    priorityListing: true,
+    advancedFilters: true,
+    adFree: true,
+    verifiedBadge: true,
+    allTemplates: true,
+    videoProfile: true,
+    whatsAppAlerts: true,
+    astroReports: 10,
+    remainingBoosts: 1, // Assumes a backend process handles monthly renewal
+    relationshipManager: true, // For the first 3 months, managed by backend logic
+  },
 };
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
-  const [features, setFeatures] = useState<Features | null>(defaultFeatures);
+  const [features, setFeatures] = useState<Features | null>(planFeatures.free);
 
   useEffect(() => {
     if (!db || !auth) {
@@ -75,7 +125,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     const loadingTimeout = setTimeout(() => {
       if (loading) {
-        console.warn("AuthContext: Loading timed out after 10 seconds. Forcing UI to render.");
         setLoading(false);
       }
     }, 10000);
@@ -100,21 +149,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             let isActive = sub?.isActive && (sub.expiryDate === null || (sub.expiryDate && sub.expiryDate > now));
             
             if (sub?.isActive && !isActive) {
-                console.log("Subscription expired for user:", firebaseUser.uid, "Updating status.");
                 updateDoc(userDocRef, { 
                     'subscription.isActive': false,
-                    'features': defaultFeatures
+                    'features': planFeatures.free,
                 }).catch(err => console.error("Failed to update expired subscription:", err));
+                 setSubscription({ ...sub, isActive: false});
+                 setFeatures(planFeatures.free);
+                 setIsPremium(false);
+            } else {
+              setIsPremium(isActive);
+              setSubscription(sub);
+              setFeatures((data.features as Features) || planFeatures.free);
             }
 
-            setIsPremium(isActive);
-            setSubscription(sub);
-            setFeatures((data.features as Features) || defaultFeatures);
           } else {
-             // Handle case where user exists in Auth but not Firestore
             setIsPremium(false);
             setSubscription(null);
-            setFeatures(defaultFeatures);
+            setFeatures(planFeatures.free);
           }
           setLoading(false);
           clearTimeout(loadingTimeout);
@@ -149,55 +200,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         let newSubscription: SubscriptionData;
-        let newFeatures: Features = { ...defaultFeatures }; 
+        const newFeatures = planFeatures[plan]; 
 
         const now = new Date();
         const startDate = Timestamp.fromDate(now);
-        let expiryDate: Timestamp | null = Timestamp.fromDate(
-          new Date(new Date().setFullYear(now.getFullYear() + 1))
-        );
-
-        const basePremiumFeatures = {
-          unlimitedViews: true,
-          contactAccess: true,
-          adFree: true,
-          priorityListing: true,
-          advancedFilters: true,
-          verifiedBadge: true,
-          allTemplates: true,
-        };
-
-        if (plan === 'silver') {
-          newFeatures = { ...newFeatures, ...basePremiumFeatures };
-        } else if (plan === 'gold') {
-          expiryDate = Timestamp.fromDate(new Date(new Date().setFullYear(now.getFullYear() + 1)));
-          newFeatures = {
-            ...newFeatures,
-            ...basePremiumFeatures,
-            videoProfile: true,
-            whatsAppAlerts: true,
-            astroReports: 5,
-          };
-        } else if (plan === 'platinum') {
-          expiryDate = null; // Lifetime
-          newFeatures = {
-            ...newFeatures,
-            ...basePremiumFeatures,
-            videoProfile: true,
-            whatsAppAlerts: true,
-            astroReports: 10,
-            relationshipManager: true,
-            remainingBoosts: 1, 
-          };
-        } else { // free plan
-           expiryDate = null;
-        }
+        let expiryDate: Timestamp | null = null;
         
+        if (plan === 'silver' || plan === 'gold') {
+          expiryDate = Timestamp.fromDate(new Date(new Date().setFullYear(now.getFullYear() + 1)));
+        }
+        // For 'platinum' and 'free', expiryDate remains null
+
         newSubscription = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
         
-        // FIX: Use setDoc with merge to perform a resilient "upsert".
-        // This avoids a failing getDoc() call when the client is offline
-        // and ensures the subscription data is always written.
         await setDoc(userDocRef, {
             subscription: newSubscription,
             features: newFeatures,
@@ -205,7 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error) {
         console.error("Error updating user plan:", error);
-        throw error; // Re-throw to be handled by the caller
+        throw error;
     }
   }, [user]);
 

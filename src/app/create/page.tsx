@@ -4,7 +4,7 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import { biodataSchema, type BiodataFormValues, defaultBiodataValues } from '@/lib/zod-schemas';
 import { AuthContext } from '@/lib/AuthContext';
@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/button';
 
 export default function ShaadiCraftPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const authContext = useContext(AuthContext);
 
   const form = useForm<BiodataFormValues>({
@@ -42,7 +41,6 @@ export default function ShaadiCraftPage() {
   const { formState: { isDirty }, reset, setValue, getValues } = form;
   const { toast } = useToast();
   const [isUpgradeAlertOpen, setUpgradeAlertOpen] = useState(false);
-  const [downloadIntent, setDownloadIntent] = useState<'modern' | 'traditional' | null>(null);
 
   const triggerPdfDownload = useCallback(async (layout: 'modern' | 'traditional') => {
     if (typeof window !== 'undefined') {
@@ -51,7 +49,6 @@ export default function ShaadiCraftPage() {
       const originalLayout = getValues('layout');
       if (originalLayout !== layout) {
         setValue('layout', layout, { shouldDirty: true });
-        // Give react time to re-render with the new layout before printing
         await new Promise(resolve => setTimeout(resolve, 100)); 
       }
 
@@ -82,7 +79,7 @@ export default function ShaadiCraftPage() {
             });
         } finally {
             if (originalLayout !== layout) {
-              setValue('layout', originalLayout); // Revert to original layout
+              setValue('layout', originalLayout);
             }
         }
       }
@@ -94,15 +91,12 @@ export default function ShaadiCraftPage() {
     
     const layout = getValues('layout');
     
-    // Premium users can download any template
     if (authContext.features.allTemplates) {
       triggerPdfDownload(layout);
     } else {
-      // Free users can download the modern layout for free, but not traditional
-      if (layout === 'modern') {
+       if (layout === 'modern') {
          triggerPdfDownload('modern');
       } else {
-         setDownloadIntent('traditional');
          setUpgradeAlertOpen(true);
       }
     }
@@ -156,7 +150,7 @@ export default function ShaadiCraftPage() {
           <div className="flex flex-col lg:flex-row lg:space-x-6 h-full">
             <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)] no-print mb-6 lg:mb-0">
               <div className="p-1 md:p-4 rounded-lg">
-                {(!authContext.features?.adFree) && (
+                {(!authContext?.features?.adFree) && (
                    <div className="mb-6">
                     <div className="w-[300px] h-[250px] mx-auto bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
                       <p className="text-muted-foreground text-center">Advertisement<br/>(300x250)</p>

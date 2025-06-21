@@ -54,40 +54,40 @@ const FeatureTable = () => {
   return (
     <div className="w-full max-w-6xl mx-auto bg-card rounded-lg shadow-lg overflow-hidden border border-border">
       <table className="w-full text-left">
-        <thead>
+        <thead className="hidden md:table-header-group">
           <tr className="bg-muted/50">
-            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-foreground w-1/3">Features</th>
-            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-foreground">Free</th>
-            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-primary">
+            <th className="py-4 px-6 text-lg font-semibold text-foreground w-1/3">Features</th>
+            <th className="py-4 px-6 text-lg font-semibold text-center text-foreground">Free</th>
+            <th className="py-4 px-6 text-lg font-semibold text-center text-primary">
                 Silver <Badge className="ml-2">Popular</Badge>
             </th>
-            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-foreground">Gold</th>
-            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-yellow-500">
+            <th className="py-4 px-6 text-lg font-semibold text-center text-foreground">Gold</th>
+            <th className="py-4 px-6 text-lg font-semibold text-center text-yellow-500">
                 <div className="flex items-center justify-center">
                     <Star className="mr-2 h-5 w-5 text-yellow-400" /> Platinum
                 </div>
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-border">
           {features.map((category, index) => (
             <React.Fragment key={category.category}>
               <tr className={cn("bg-muted/30", {"border-t-2 border-border": index > 0})}>
-                <td colSpan={5} className="py-2 px-4 font-bold text-primary">{category.category}</td>
+                <td colSpan={5} className="py-3 px-4 font-bold text-primary text-base md:text-lg">{category.category}</td>
               </tr>
               {category.items.map((feature) => (
-                 <tr key={feature.name} className="border-b border-border last:border-b-0">
-                    <td className="py-3 px-2 md:px-6 font-medium text-foreground">{feature.name}</td>
-                    <td className="py-3 px-2 md:px-6 text-center text-muted-foreground">
+                 <tr key={feature.name} className="flex flex-col md:table-row py-2 md:py-0 border-b md:border-b-0">
+                    <td className="py-3 px-4 font-medium text-foreground">{feature.name}</td>
+                    <td className="py-3 px-4 text-left md:text-center text-muted-foreground" data-label="Free: ">
                         <FeatureValue value={feature.free} />
                     </td>
-                    <td className="py-3 px-2 md:px-6 text-center font-semibold text-primary">
+                    <td className="py-3 px-4 text-left md:text-center font-semibold text-primary" data-label="Silver: ">
                        <FeatureValue value={feature.silver} />
                     </td>
-                    <td className="py-3 px-2 md:px-6 text-center text-muted-foreground">
+                    <td className="py-3 px-4 text-left md:text-center text-muted-foreground" data-label="Gold: ">
                         <FeatureValue value={feature.gold} />
                     </td>
-                     <td className="py-3 px-2 md:px-6 text-center font-semibold text-yellow-600">
+                     <td className="py-3 px-4 text-left md:text-center font-semibold text-yellow-600" data-label="Platinum: ">
                         <FeatureValue value={feature.platinum} />
                     </td>
                 </tr>
@@ -96,6 +96,26 @@ const FeatureTable = () => {
           ))}
         </tbody>
       </table>
+      <style jsx>{`
+        @media (max-width: 767px) {
+            td:not(:first-child)::before {
+                content: attr(data-label);
+                font-weight: bold;
+                margin-right: 0.5rem;
+                display: inline-block;
+                width: 80px; /* Adjust as needed */
+            }
+            td {
+                display: block;
+                text-align: right;
+            }
+            td:first-child {
+                text-align: left;
+                font-size: 1.1rem;
+                background-color: hsl(var(--muted) / 0.5);
+            }
+        }
+      `}</style>
     </div>
   );
 };
