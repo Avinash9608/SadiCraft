@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback, useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -80,18 +80,19 @@ export default function ShaadiCraftPage() {
     }
   }, [form, toast]);
   
-  // Auth Guard
-  if (authContext?.loading) {
+  useEffect(() => {
+    if (authContext && !authContext.loading && !authContext.user) {
+      router.push('/login');
+    }
+  }, [authContext, router]);
+
+  // Auth Guard: Show spinner while loading or if user is not logged in (and redirect is pending)
+  if (authContext?.loading || !authContext?.user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Spinner className="h-10 w-10" />
       </div>
     );
-  }
-
-  if (!authContext?.user) {
-    router.push('/login');
-    return null; // Render nothing while redirecting
   }
 
   return (
