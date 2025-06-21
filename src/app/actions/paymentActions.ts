@@ -5,9 +5,17 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
 export async function createOrder(amountInPaise: number) {
+  const key_id = process.env.RAZORPAY_KEY_ID;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!key_id || !key_secret) {
+    console.error("Razorpay key_id or key_secret is not defined in environment variables.");
+    return null;
+  }
+  
   const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    key_id: key_id,
+    key_secret: key_secret,
   });
 
   const options = {
@@ -33,7 +41,7 @@ interface VerificationData {
 
 export async function verifyPayment(data: VerificationData) {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = data;
-    const key_secret = process.env.RAZORPAY_KEY_SECRET!;
+    const key_secret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!key_secret) {
         console.error("Razorpay key secret is not defined.");
