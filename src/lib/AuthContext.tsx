@@ -4,7 +4,7 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { doc, onSnapshot, updateDoc, Timestamp, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, Timestamp, setDoc, getDoc } from 'firebase/firestore';
 
 export type Plan = 'free' | 'silver' | 'gold' | 'platinum';
 
@@ -43,50 +43,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [unlockedFeatures, setUnlockedFeatures] = useState<UnlockedFeatures | null>(null);
 
   useEffect(() => {
-    if (!db) {
-        setLoading(false);
-        return;
+    if (!db || !auth) {
+      setLoading(false);
+      return;
     }
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+
+    let firestoreUnsubscribe: (() => void) | null = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // Clean up previous Firestore listener if it exists
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+      }
+
       if (firebaseUser) {
+        setUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-        
-        const unsubFromDoc = onSnapshot(userDocRef, (docSnap) => {
+
+        firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             const sub = data.subscription as SubscriptionData;
-
-            // Check if subscription is active
             const now = Timestamp.now();
-            const isActive = sub && sub.isActive && (sub.expiry === null || sub.expiry > now);
-
+            const isActive = sub && sub.isActive && (sub.expiry === null || (sub.expiry && sub.expiry > now));
+            
             setIsPremium(isActive);
             setSubscription(sub);
             setUnlockedFeatures(data.unlockedFeatures as UnlockedFeatures);
           } else {
-            // This case handles users who registered before Firestore documents were created.
-            // Create a default document for them.
+            // User doc doesn't exist, create it with default free tier
+            const defaultSub: SubscriptionData = { plan: 'free', expiry: null, isActive: false };
+            const defaultFeatures: UnlockedFeatures = {
+                traditionalTemplates: false,
+                adFree: false,
+                videoProfile: false,
+                modernDownload: false,
+                traditionalDownload: false,
+            };
             setDoc(userDocRef, {
               email: firebaseUser.email,
               name: firebaseUser.displayName,
-              subscription: { plan: "free", expiry: null, isActive: false },
-              unlockedFeatures: {
-                traditionalTemplates: false, adFree: false, videoProfile: false,
-                modernDownload: false, traditionalDownload: false
-              }
+              subscription: defaultSub,
+              unlockedFeatures: defaultFeatures
             });
           }
           setLoading(false);
         }, (error) => {
-            console.error("Error listening to user document:", error);
-            setLoading(false);
+          console.error("Error with Firestore snapshot:", error);
+          setLoading(false);
         });
-        
-        return () => unsubFromDoc();
-
       } else {
-        // User is logged out
+        // User logged out
+        setUser(null);
         setIsPremium(false);
         setSubscription(null);
         setUnlockedFeatures(null);
@@ -94,22 +102,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    return () => unsubscribe();
+    // Cleanup on component unmount
+    return () => {
+      authUnsubscribe();
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+      }
+    };
   }, []);
 
   const updateSubscription = useCallback(async (data: Partial<SubscriptionData>) => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, { subscription: { ...subscription, ...data } });
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const existingData = docSnap.data().subscription || {};
+        await updateDoc(userDocRef, {
+          subscription: { ...existingData, ...data }
+        });
+      }
     }
-  }, [user, subscription]);
+  }, [user]);
 
   const updateUnlockedFeatures = useCallback(async (data: Partial<UnlockedFeatures>) => {
     if (user) {
-      const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, { unlockedFeatures: { ...unlockedFeatures, ...data } });
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+            const existingData = docSnap.data().unlockedFeatures || {};
+            await updateDoc(userDocRef, {
+                unlockedFeatures: { ...existingData, ...data }
+            });
+        }
     }
-  }, [user, unlockedFeatures]);
+  }, [user]);
 
   const value = {
     user,
