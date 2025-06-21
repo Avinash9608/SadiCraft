@@ -84,6 +84,7 @@ export default function CheckoutPage() {
 
     const planDetails = plans[selectedPlanKey];
     const amountInPaise = planDetails.price * 100;
+    const returnToLayout = searchParams.get('return_to_layout');
 
     try {
       const order = await createOrder(amountInPaise);
@@ -131,14 +132,12 @@ export default function CheckoutPage() {
               paymentId: response.razorpay_payment_id,
             };
 
-            // This is the key step: updating the context directly.
-            // This will trigger an app-wide state update without a reload.
             authContext.updateSubscription(subscriptionData);
             
             toast({ title: "Payment Successful!", description: `Welcome to the ${planDetails.name}! You now have access to all its features.` });
             
-            // Redirect the user. The AuthContext is already updated.
-            router.push('/create');
+            const redirectUrl = returnToLayout ? `/create?layout=${returnToLayout}` : '/create';
+            router.push(redirectUrl);
 
           } else {
             toast({ variant: 'destructive', title: 'Payment Verification Failed', description: 'Please contact support.' });

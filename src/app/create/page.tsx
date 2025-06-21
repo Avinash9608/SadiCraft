@@ -4,7 +4,7 @@
 import React, { useCallback, useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { biodataSchema, type BiodataFormValues, defaultBiodataValues } from '@/lib/zod-schemas';
 import { AuthContext } from '@/lib/AuthContext';
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function ShaadiCraftPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const authContext = useContext(AuthContext);
 
   const form = useForm<BiodataFormValues>({
@@ -85,6 +86,18 @@ export default function ShaadiCraftPage() {
       router.push('/login');
     }
   }, [authContext, router]);
+
+  // Set layout from URL parameter on initial load
+  useEffect(() => {
+    const layoutParam = searchParams.get('layout');
+    if (layoutParam === 'modern' || layoutParam === 'traditional') {
+      form.setValue('layout', layoutParam, { shouldDirty: true });
+      // Clean the URL so a refresh doesn't re-apply the layout
+      const newUrl = window.location.pathname;
+      window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on component mount
 
   // Auth Guard: Show spinner while loading or if user is not logged in (and redirect is pending)
   if (authContext?.loading || !authContext?.user) {

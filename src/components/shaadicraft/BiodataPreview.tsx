@@ -24,7 +24,7 @@ const PremiumFeatureLock: React.FC = () => (
       This beautiful traditional layout is a premium feature. Upgrade your plan to use it and access all other benefits!
     </p>
     <Button asChild>
-      <Link href="/checkout">
+      <Link href="/checkout?plan=silver&return_to_layout=traditional">
         <Star className="mr-2 h-4 w-4" />
         Upgrade Now
       </Link>
