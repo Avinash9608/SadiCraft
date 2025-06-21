@@ -1,5 +1,5 @@
 
-import { Check } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -35,7 +35,10 @@ const PricingCard: React.FC<PricingCardProps> = ({
         <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
       )}
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-headline">{title}</CardTitle>
+        <CardTitle className={cn("text-2xl font-headline", title === "Platinum" && "text-yellow-500")}>
+          {title === "Platinum" && <Star className="inline-block mr-2 mb-1 h-5 w-5 text-yellow-400" />}
+          {title}
+        </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">

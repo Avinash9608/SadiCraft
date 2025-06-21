@@ -113,10 +113,10 @@ export default function LandingPage() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h3 className="text-3xl md:text-4xl font-bold font-headline text-foreground">
-                Free vs. Premium: Choose Your Plan
+                Choose Your Perfect Plan
               </h3>
               <p className="text-md text-muted-foreground mt-2">
-                Start for free and upgrade for exclusive benefits.
+                Start for free and upgrade for exclusive benefits and better results.
               </p>
             </div>
             <FeatureTable />
@@ -131,29 +131,30 @@ export default function LandingPage() {
                 Unlock Your Path to Marriage
               </h3>
               <p className="text-md text-muted-foreground mt-2">
-                Simple, transparent pricing.
+                Simple, transparent pricing for every need.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <PricingCard
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+               <PricingCard
                 title="Free"
                 price="₹0"
-                description="Get started and explore basic profiles."
+                description="Get started and create your basic profile."
                 features={[
-                  "Create Basic Profile",
+                  "Basic Profile Creation",
                   "View 5 Profiles/Day",
                   "Send 3 Interests/Month",
                   "Basic Search Filters",
+                  "Ad-Supported",
                 ]}
                 buttonText="Start for Free"
                 buttonVariant="outline"
                 buttonLink={authContext?.user ? '/create' : '/register'}
               />
               <PricingCard
-                title="Premium Monthly"
+                title="Silver"
                 price="₹299"
                 period="/month"
-                description="Unlimited access and better visibility."
+                description="Unlock core premium features."
                 features={[
                   "Unlimited Profile Views",
                   "Unlimited Interests",
@@ -162,24 +163,40 @@ export default function LandingPage() {
                   "Advanced Filters",
                   "Ad-Free Experience",
                   "Verified Profile Badge",
+                  "All Biodata Templates",
                 ]}
-                buttonText="Upgrade Now"
+                buttonText="Choose Silver"
+                buttonLink="/checkout?plan=silver"
                 isPopular
-                buttonLink="/checkout?plan=monthly"
               />
               <PricingCard
-                title="Premium Yearly"
+                title="Gold"
                 price="₹2,499"
                 period="/year"
                 description="Best value for serious seekers."
                 features={[
-                    "All Premium Features",
-                    "Huge Savings",
-                    "Custom Biodata Templates",
+                    "All Silver Features",
                     "Video Profile Upload",
+                    "SMS/WhatsApp Match Alerts",
+                    "5 Free Astro Reports",
+                    "Best value (Save 30%)"
                 ]}
-                buttonText="Choose Yearly"
-                buttonLink="/checkout?plan=yearly"
+                buttonText="Choose Gold"
+                buttonLink="/checkout?plan=gold"
+              />
+               <PricingCard
+                title="Platinum"
+                price="₹4,999"
+                period="/lifetime"
+                description="One-time payment for lifetime access."
+                features={[
+                  "All Gold Features",
+                  "Lifetime Validity",
+                  "1 Profile Boost Every Month",
+                  "Dedicated Relationship Manager (First 3 months)",
+                ]}
+                buttonText="Go Platinum"
+                buttonLink="/checkout?plan=platinum"
               />
             </div>
           </div>

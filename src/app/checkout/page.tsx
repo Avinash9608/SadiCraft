@@ -22,19 +22,29 @@ declare global {
 }
 
 const plans = {
-  monthly: {
-    id: 'plan_monthly_299',
-    name: 'Premium Monthly',
+  silver: {
+    id: 'plan_silver_monthly',
+    name: 'Silver Plan',
     price: 299,
-    description: 'Full access to all premium features, billed monthly.'
+    period: '/month',
+    description: 'Unlock core premium features for 30 days.'
   },
-  yearly: {
-    id: 'plan_yearly_2499',
-    name: 'Premium Yearly',
+  gold: {
+    id: 'plan_gold_yearly',
+    name: 'Gold Plan',
     price: 2499,
-    description: 'Get the best value with our annual plan.'
+    period: '/year',
+    description: 'Best value with all features for a full year.'
+  },
+  platinum: {
+    id: 'plan_platinum_lifetime',
+    name: 'Platinum Plan',
+    price: 4999,
+    period: 'one-time',
+    description: 'Lifetime access and exclusive monthly perks.'
   }
 };
+
 
 type PlanKey = keyof typeof plans;
 
@@ -52,8 +62,8 @@ export default function CheckoutPage() {
     if (plan && plans[plan]) {
       setSelectedPlanKey(plan);
     } else {
-      // Default to monthly if no plan or invalid plan is specified
-      setSelectedPlanKey('monthly');
+      // Default to silver if no plan or invalid plan is specified
+      setSelectedPlanKey('silver');
     }
   }, [searchParams]);
 
@@ -173,7 +183,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="text-right">
                         <p className="text-2xl font-bold">₹{selectedPlan.price}</p>
-                        <p className="text-xs text-muted-foreground">{selectedPlanKey === 'yearly' ? '/year' : '/month'}</p>
+                        <p className="text-xs text-muted-foreground">{selectedPlan.period}</p>
                     </div>
                 </div>
             </div>
