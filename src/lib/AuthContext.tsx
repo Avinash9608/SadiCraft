@@ -195,22 +195,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         newSubscription = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
         
-        const docSnap = await getDoc(userDocRef);
-
-        if (docSnap.exists()) {
-            await updateDoc(userDocRef, {
-                subscription: newSubscription,
-                features: newFeatures,
-            });
-        } else {
-             await setDoc(userDocRef, {
-                subscription: newSubscription,
-                features: newFeatures,
-                email: user.email,
-                name: user.displayName,
-                createdAt: Timestamp.now(),
-            });
-        }
+        // FIX: Use setDoc with merge to perform a resilient "upsert".
+        // This avoids a failing getDoc() call when the client is offline
+        // and ensures the subscription data is always written.
+        await setDoc(userDocRef, {
+            subscription: newSubscription,
+            features: newFeatures,
+        }, { merge: true });
 
     } catch (error) {
         console.error("Error updating user plan:", error);
