@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import html2pdf from 'html2pdf.js';
 
 import AppHeader from './AppHeader';
 import BiodataForm from './BiodataForm';
@@ -43,9 +42,10 @@ const MatrimonialPlatform: React.FC = () => {
         return () => subscription.unsubscribe();
     }, [form]);
 
-    const handleDownloadPdf = () => {
+    const handleDownloadPdf = async () => {
         const element = document.getElementById('biodata-preview-content');
         if (element) {
+             const html2pdf = (await import('html2pdf.js')).default;
              const opt = {
                 margin: 0,
                 filename: `${form.getValues('fullName') || 'biodata'}.pdf`,
