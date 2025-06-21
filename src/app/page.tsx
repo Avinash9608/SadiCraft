@@ -1,104 +1,168 @@
 
-"use client";
+import { Button } from '@/components/ui/button';
+import FeatureTable from '@/components/shaadicraft/FeatureTable';
+import PricingCard from '@/components/shaadicraft/PricingCard';
+import { FileText, ArrowRight, Star, Video, MessageCircle, BarChart } from 'lucide-react';
+import Link from 'next/link';
 
-import React, { useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { biodataSchema, type BiodataFormValues, defaultBiodataValues } from '@/lib/zod-schemas';
-// Removed static import: import html2pdf from 'html2pdf.js';
-
-import AppHeader from '@/components/shaadicraft/AppHeader';
-import BiodataForm from '@/components/shaadicraft/BiodataForm';
-import BiodataPreview from '@/components/shaadicraft/BiodataPreview';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from "@/hooks/use-toast";
-
-export default function ShaadiCraftPage() {
-  const form = useForm<BiodataFormValues>({
-    resolver: zodResolver(biodataSchema),
-    defaultValues: defaultBiodataValues,
-    mode: 'onChange', 
-  });
-
-  const watchedValues = form.watch();
-  const { formState: { isDirty } } = form;
-  const { toast } = useToast();
-
-
-  const handleDownloadPdf = useCallback(async () => {
-    if (typeof window !== 'undefined') {
-      // Dynamically import html2pdf.js
-      const html2pdf = (await import('html2pdf.js')).default;
-
-      const element = document.getElementById('biodata-preview-content');
-      const currentData = form.getValues();
-
-      if (element && html2pdf) {
-        const filename = currentData.fullName
-          ? `${currentData.fullName.replace(/\\s+/g, '_')}_Biodata.pdf`
-          : 'biodata.pdf';
-
-        const opt = {
-          margin:       0.5,
-          filename:     filename,
-          image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, logging: false, letterRendering: true },
-          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().from(element).set(opt).save()
-          .catch((err: Error) => {
-            console.error("Error generating PDF:", err);
-            toast({
-              variant: "destructive",
-              title: "PDF Generation Failed",
-              description: "There was an error generating the PDF. Please try again.",
-            });
-          });
-      } else {
-        if (!element) {
-          console.error("Biodata preview element not found for PDF generation.");
-          toast({
-            variant: "destructive",
-
-          title: "Error",
-          description: "Could not generate PDF. Preview element is missing.",
-        });
-      }
-      if (!html2pdf) {
-        console.error("html2pdf library not loaded.");
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not generate PDF. PDF library failed to load.",
-        });
-      }
-    }
-    }
-  }, [form, toast]);
-
+export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <AppHeader form={form} onDownloadPdf={handleDownloadPdf} />
-      <main className="flex-grow container mx-auto py-4 px-2 md:px-0">
-        <div className="flex flex-col lg:flex-row lg:space-x-6 h-full">
-          {/* Form Section */}
-          <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)] no-print mb-6 lg:mb-0">
-            <div className="p-1 md:p-4 rounded-lg">
-              <BiodataForm form={form} />
-            </div>
-          </ScrollArea>
-
-          {/* Preview Section */}
-          <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)]">
-             <div className="p-1 md:p-4 rounded-lg" id="biodata-preview-container">
-              <BiodataPreview data={watchedValues} isDirty={isDirty} />
-            </div>
-          </ScrollArea>
+      {/* Header */}
+      <header className="py-4 px-4 md:px-8 bg-card border-b border-border shadow-sm sticky top-0 z-50">
+        <div className="container mx-auto flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <FileText className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-headline font-bold text-primary">ShaadiCraft</h1>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost">Log In</Button>
+            <Button asChild>
+              <Link href="/create">Create Free Biodata</Link>
+            </Button>
+          </div>
         </div>
+      </header>
+
+      {/* Hero Section */}
+      <main className="flex-grow">
+        <section className="text-center py-20 md:py-32 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <h2 className="text-4xl md:text-6xl font-extrabold font-headline text-primary mb-4">
+              Find Your Perfect Match in Bihar & UP
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+              The trusted matrimony platform for creating beautiful biodatas and connecting with your ideal partner.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Button size="lg" asChild>
+                <Link href="/create">
+                  Get Started for Free <ArrowRight className="ml-2" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline">
+                Explore Premium Plans
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Comparison Section */}
+        <section id="features" className="py-16 md:py-24">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h3 className="text-3xl md:text-4xl font-bold font-headline text-foreground">
+                Free vs. Premium: Choose Your Plan
+              </h3>
+              <p className="text-md text-muted-foreground mt-2">
+                Start for free and upgrade for exclusive benefits.
+              </p>
+            </div>
+            <FeatureTable />
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-16 md:py-24 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h3 className="text-3xl md:text-4xl font-bold font-headline text-foreground">
+                Unlock Your Path to Marriage
+              </h3>
+              <p className="text-md text-muted-foreground mt-2">
+                Simple, transparent pricing.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <PricingCard
+                title="Free"
+                price="₹0"
+                description="Get started and explore basic profiles."
+                features={[
+                  "Create Basic Profile",
+                  "View 5 Profiles/Day",
+                  "Send 3 Interests/Month",
+                  "Basic Search Filters",
+                ]}
+                buttonText="Start for Free"
+                buttonVariant="outline"
+              />
+              <PricingCard
+                title="Premium Monthly"
+                price="₹299"
+                period="/month"
+                description="Unlimited access and better visibility."
+                features={[
+                  "Unlimited Profile Views",
+                  "Unlimited Interests",
+                  "View Contact Details",
+                  "Priority Listing",
+                  "Advanced Filters",
+                  "Ad-Free Experience",
+                  "Verified Profile Badge",
+                ]}
+                buttonText="Upgrade Now"
+                isPopular
+              />
+              <PricingCard
+                title="Premium Yearly"
+                price="₹2,499"
+                period="/year"
+                description="Best value for serious seekers."
+                features={[
+                    "All Premium Features",
+                    "Huge Savings",
+                    "Custom Biodata Templates",
+                    "Video Profile Upload",
+                ]}
+                buttonText="Choose Yearly"
+              />
+            </div>
+          </div>
+        </section>
+        
+        {/* New Premium Features Section */}
+        <section className="py-16 md:py-24">
+            <div className="container mx-auto px-4">
+                <div className="text-center mb-12">
+                    <h3 className="text-3xl md:text-4xl font-bold font-headline text-foreground">Exclusive Premium Add-ons</h3>
+                    <p className="text-md text-muted-foreground mt-2">Take your search to the next level.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <div className="text-center p-6 bg-card rounded-lg shadow-sm">
+                        <Video className="mx-auto h-12 w-12 text-primary mb-4" />
+                        <h4 className="text-xl font-semibold mb-2">Video Profiles</h4>
+                        <p className="text-muted-foreground">Upload a 1-min intro video to show your personality.</p>
+                    </div>
+                     <div className="text-center p-6 bg-card rounded-lg shadow-sm">
+                        <BarChart className="mx-auto h-12 w-12 text-primary mb-4" />
+                        <h4 className="text-xl font-semibold mb-2">Profile Boosts (₹50)</h4>
+                        <p className="text-muted-foreground">Highlight your profile in search results for 24 hours.</p>
+                    </div>
+                    <div className="text-center p-6 bg-card rounded-lg shadow-sm">
+                        <Star className="mx-auto h-12 w-12 text-primary mb-4" />
+                        <h4 className="text-xl font-semibold mb-2">Astro Matching (₹99)</h4>
+                        <p className="text-muted-foreground">Get AI-powered horoscope compatibility reports.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
       </main>
-      <footer className="text-center p-4 text-sm text-muted-foreground border-t border-border no-print">
-        &copy; {new Date().getFullYear()} ShaadiCraft. All rights reserved.
+
+      {/* Footer */}
+      <footer className="text-center p-6 text-sm text-muted-foreground border-t border-border bg-card">
+        <div className="container mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                 <p>&copy; {new Date().getFullYear()} ShaadiCraft. All rights reserved.</p>
+                 <div className="flex gap-4">
+                    <Link href="#" className="hover:text-primary">About Us</Link>
+                    <Link href="#" className="hover:text-primary">Contact</Link>
+                    <Link href="#" className="hover:text-primary">Terms of Service</Link>
+                    <Link href="#" className="hover:text-primary">Privacy Policy</Link>
+                 </div>
+            </div>
+        </div>
       </footer>
     </div>
   );

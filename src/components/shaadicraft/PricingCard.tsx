@@ -1,0 +1,61 @@
+
+import { Check } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+
+interface PricingCardProps {
+  title: string;
+  price: string;
+  period?: string;
+  description: string;
+  features: string[];
+  buttonText: string;
+  buttonVariant?: 'default' | 'outline';
+  isPopular?: boolean;
+}
+
+const PricingCard: React.FC<PricingCardProps> = ({
+  title,
+  price,
+  period,
+  description,
+  features,
+  buttonText,
+  buttonVariant = 'default',
+  isPopular = false,
+}) => {
+  return (
+    <Card className={cn('flex flex-col', isPopular ? 'border-primary shadow-2xl relative' : '')}>
+      {isPopular && (
+        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+      )}
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-headline">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <div className="text-center mb-6">
+          <span className="text-5xl font-extrabold">{price}</span>
+          {period && <span className="text-muted-foreground">{period}</span>}
+        </div>
+        <ul className="space-y-3">
+          {features.map((feature) => (
+            <li key={feature} className="flex items-start">
+              <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5 shrink-0" />
+              <span className="text-muted-foreground">{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+      <CardFooter>
+        <Button className="w-full" size="lg" variant={buttonVariant}>
+          {buttonText}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
+
+export default PricingCard;

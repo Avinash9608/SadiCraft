@@ -4,9 +4,10 @@ import React from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import LayoutSelector from './LayoutSelector';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Home } from 'lucide-react';
 import type { BiodataFormValues } from '@/lib/zod-schemas';
-import { Form } from '@/components/ui/form'; // Import FormProvider
+import { Form } from '@/components/ui/form';
+import Link from 'next/link';
 
 interface AppHeaderProps {
   form: UseFormReturn<BiodataFormValues>;
@@ -19,11 +20,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({ form, onDownloadPdf }) => {
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center">
            <FileText className="h-8 w-8 text-primary mr-2" />
-          <h1 className="text-3xl font-headline font-bold text-primary">ShaadiCraft</h1>
+          <h1 className="text-3xl font-headline font-bold text-primary">ShaadiCraft Biodata Maker</h1>
         </div>
-        <Form {...form}> {/* Wrap the section that needs form context */}
+        <Form {...form}>
           <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6">
-            <LayoutSelector form={form} /> {/* Now LayoutSelector is within FormProvider context */}
+            <Button variant="ghost" asChild>
+                <Link href="/"><Home className="mr-2 h-4 w-4"/> Home</Link>
+            </Button>
+            <LayoutSelector form={form} />
             <Button onClick={onDownloadPdf} variant="outline" className="w-full sm:w-auto">
               <Download className="mr-2 h-4 w-4" />
               Download PDF
