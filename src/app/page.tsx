@@ -86,7 +86,7 @@ export default function LandingPage() {
             </p>
             <div className="flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/register">
+                <Link href={authContext?.user ? '/create' : '/register'}>
                   Get Started for Free <ArrowRight className="ml-2" />
                 </Link>
               </Button>
@@ -145,7 +145,7 @@ export default function LandingPage() {
                 ]}
                 buttonText="Start for Free"
                 buttonVariant="outline"
-                buttonLink="/register"
+                buttonLink={authContext?.user ? '/create' : '/register'}
               />
               <PricingCard
                 title="Premium Monthly"
