@@ -28,7 +28,7 @@ export default function ShaadiCraftPage() {
   });
 
   const watchedValues = form.watch();
-  const { formState: { isDirty } } = form;
+  const { formState: { isDirty }, reset, setValue } = form;
   const { toast } = useToast();
 
   const handleDownloadPdf = useCallback(async () => {
@@ -80,6 +80,29 @@ export default function ShaadiCraftPage() {
       }
     }
   }, [form, toast]);
+
+  // Load data from sessionStorage on component mount
+  useEffect(() => {
+    try {
+      const savedData = sessionStorage.getItem('biodataFormData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        // Use form.reset to update the entire form state without losing react-hook-form's control
+        reset(parsedData);
+      }
+    } catch (error) {
+      console.error("Failed to load form data from session storage", error);
+      // If data is corrupted, remove it
+      sessionStorage.removeItem('biodataFormData');
+    }
+  }, [reset]);
+
+  // Save data to sessionStorage whenever it changes and is dirty
+  useEffect(() => {
+    if (isDirty) {
+      sessionStorage.setItem('biodataFormData', JSON.stringify(watchedValues));
+    }
+  }, [watchedValues, isDirty]);
   
   useEffect(() => {
     if (authContext && !authContext.loading && !authContext.user) {
@@ -91,13 +114,12 @@ export default function ShaadiCraftPage() {
   useEffect(() => {
     const layoutParam = searchParams.get('layout');
     if (layoutParam === 'modern' || layoutParam === 'traditional') {
-      form.setValue('layout', layoutParam, { shouldDirty: true });
+      setValue('layout', layoutParam, { shouldDirty: true });
       // Clean the URL so a refresh doesn't re-apply the layout
       const newUrl = window.location.pathname;
       window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on component mount
+  }, [searchParams, setValue]); 
 
   // Auth Guard: Show spinner while loading or if user is not logged in (and redirect is pending)
   if (authContext?.loading || !authContext?.user) {
