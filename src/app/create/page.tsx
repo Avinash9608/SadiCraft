@@ -82,6 +82,12 @@ export default function ShaadiCraftPage() {
           {/* Form Section */}
           <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)] no-print mb-6 lg:mb-0">
             <div className="p-1 md:p-4 rounded-lg">
+               {/* Ad Placeholder */}
+              <div className="mb-6">
+                <div className="w-[300px] h-[250px] mx-auto bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
+                  <p className="text-muted-foreground text-center">Advertisement<br/>(300x250)</p>
+                </div>
+              </div>
               <BiodataForm form={form} />
             </div>
           </ScrollArea>

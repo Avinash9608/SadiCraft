@@ -1,9 +1,10 @@
 
 import { Check } from 'lucide-react';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 interface PricingCardProps {
   title: string;
@@ -14,6 +15,7 @@ interface PricingCardProps {
   buttonText: string;
   buttonVariant?: 'default' | 'outline';
   isPopular?: boolean;
+  buttonLink?: string;
 }
 
 const PricingCard: React.FC<PricingCardProps> = ({
@@ -25,6 +27,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
   buttonText,
   buttonVariant = 'default',
   isPopular = false,
+  buttonLink,
 }) => {
   return (
     <Card className={cn('flex flex-col', isPopular ? 'border-primary shadow-2xl relative' : '')}>
@@ -50,8 +53,8 @@ const PricingCard: React.FC<PricingCardProps> = ({
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" size="lg" variant={buttonVariant}>
-          {buttonText}
+        <Button className="w-full" size="lg" variant={buttonVariant} asChild={!!buttonLink}>
+          {buttonLink ? <Link href={buttonLink}>{buttonText}</Link> : <>{buttonText}</>}
         </Button>
       </CardFooter>
     </Card>

@@ -16,9 +16,11 @@ export default function LandingPage() {
             <h1 className="text-3xl font-headline font-bold text-primary">ShaadiCraft</h1>
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost">Log In</Button>
+             <Button variant="ghost" asChild>
+                <Link href="/login">Log In</Link>
+            </Button>
             <Button asChild>
-              <Link href="/create">Create Free Biodata</Link>
+              <Link href="/register">Create Free Biodata</Link>
             </Button>
           </div>
         </div>
@@ -36,13 +38,22 @@ export default function LandingPage() {
             </p>
             <div className="flex justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/create">
+                <Link href="/register">
                   Get Started for Free <ArrowRight className="ml-2" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline">
-                Explore Premium Plans
+               <Button size="lg" variant="outline" asChild>
+                 <a href="#pricing">Explore Premium Plans</a>
               </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Ad Placeholder */}
+        <section className="py-8">
+          <div className="container mx-auto flex justify-center">
+            <div className="w-[728px] h-[90px] bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
+              <p className="text-muted-foreground">Advertisement (728x90)</p>
             </div>
           </div>
         </section>
@@ -86,6 +97,7 @@ export default function LandingPage() {
                 ]}
                 buttonText="Start for Free"
                 buttonVariant="outline"
+                buttonLink="/register"
               />
               <PricingCard
                 title="Premium Monthly"
@@ -103,6 +115,7 @@ export default function LandingPage() {
                 ]}
                 buttonText="Upgrade Now"
                 isPopular
+                buttonLink="/register"
               />
               <PricingCard
                 title="Premium Yearly"
@@ -116,6 +129,7 @@ export default function LandingPage() {
                     "Video Profile Upload",
                 ]}
                 buttonText="Choose Yearly"
+                buttonLink="/register"
               />
             </div>
           </div>
