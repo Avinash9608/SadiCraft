@@ -11,7 +11,7 @@ import { FileText, ArrowLeft, Loader2, Star } from 'lucide-react';
 import Link from 'next/link';
 
 import { useToast } from "@/hooks/use-toast";
-import { AuthContext } from '@/lib/AuthContext';
+import { AuthContext, type SubscriptionData } from '@/lib/AuthContext';
 import { Spinner } from '@/components/Spinner';
 import { createOrder, verifyPayment } from '@/app/actions/paymentActions';
 
@@ -62,7 +62,6 @@ export default function CheckoutPage() {
     if (plan && plans[plan]) {
       setSelectedPlanKey(plan);
     } else {
-      // Default to a plan if none is selected, or handle error
       setSelectedPlanKey('silver');
     }
   }, [searchParams]);
@@ -70,9 +69,10 @@ export default function CheckoutPage() {
   const handlePayment = async () => {
     setIsLoading(true);
 
-    if (!authContext?.user) {
+    if (!authContext?.user || !authContext.updateSubscription) {
       toast({ variant: 'destructive', title: 'Not Logged In', description: 'Please log in to make a purchase.' });
-      router.push('/login');
+      if (!authContext.user) router.push('/login');
+      setIsLoading(false);
       return;
     }
     
@@ -124,20 +124,20 @@ export default function CheckoutPage() {
                expiryDate = expiry.toISOString();
             }
             
-            const subscriptionData = {
+            const subscriptionData: SubscriptionData = {
               plan: selectedPlanKey,
               purchaseDate: now.toISOString(),
               expiry: expiryDate,
               paymentId: response.razorpay_payment_id,
             };
 
-            // This is the key step: saving the subscription data to localStorage.
-            // The AuthContext will pick up this change via the 'storage' event listener.
-            localStorage.setItem('shaadiCraftSubscription', JSON.stringify(subscriptionData));
+            // This is the key step: updating the context directly.
+            // This will trigger an app-wide state update without a reload.
+            authContext.updateSubscription(subscriptionData);
             
             toast({ title: "Payment Successful!", description: `Welcome to the ${planDetails.name}! You now have access to all its features.` });
             
-            // Redirect the user. The AuthContext's listener will handle the state update.
+            // Redirect the user. The AuthContext is already updated.
             router.push('/create');
 
           } else {
