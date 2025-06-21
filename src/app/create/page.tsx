@@ -5,7 +5,6 @@ import React, { useCallback, useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Timestamp } from 'firebase/firestore';
 
 import { biodataSchema, type BiodataFormValues, defaultBiodataValues } from '@/lib/zod-schemas';
 import { AuthContext } from '@/lib/AuthContext';
@@ -36,11 +35,9 @@ export default function ShaadiCraftPage() {
     if (typeof window !== 'undefined') {
       const html2pdf = (await import('html2pdf.js')).default;
 
-      // Temporarily switch layout if needed for the PDF
       const originalLayout = form.getValues('layout');
       if (originalLayout !== layout) {
         setValue('layout', layout, { shouldDirty: true });
-        // Allow a tick for React to re-render with the correct layout
         await new Promise(resolve => setTimeout(resolve, 50));
       }
 
@@ -69,7 +66,6 @@ export default function ShaadiCraftPage() {
               description: "There was an error generating the PDF. Please try again.",
             });
           }).finally(() => {
-              // Switch back to original layout after download
               if (originalLayout !== layout) {
                 setValue('layout', originalLayout);
               }
@@ -97,7 +93,7 @@ export default function ShaadiCraftPage() {
         router.push('/checkout?action=download_traditional&return_to_layout=traditional');
       }
     }
-  }, [authContext, form, router, toast, triggerPdfDownload]);
+  }, [authContext, form, router, triggerPdfDownload]);
 
 
   // Load data from sessionStorage on component mount
@@ -148,7 +144,7 @@ export default function ShaadiCraftPage() {
         } else if (downloadPending === 'traditional' && authContext?.unlockedFeatures?.traditionalDownload) {
             triggerPdfDownload('traditional');
         }
-        // Clean the URL
+        // Clean the URL from search params
         const newUrl = window.location.pathname;
         window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
     }
@@ -170,7 +166,7 @@ export default function ShaadiCraftPage() {
         <div className="flex flex-col lg:flex-row lg:space-x-6 h-full">
           <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)] no-print mb-6 lg:mb-0">
             <div className="p-1 md:p-4 rounded-lg">
-              {!authContext.isPremium && (
+              {(!authContext.isPremium && !authContext.unlockedFeatures?.adFree) && (
                  <div className="mb-6">
                   <div className="w-[300px] h-[250px] mx-auto bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
                     <p className="text-muted-foreground text-center">Advertisement<br/>(300x250)</p>

@@ -78,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setSubscription(sub);
             setUnlockedFeatures(data.unlockedFeatures as UnlockedFeatures);
           } else {
+            // This case handles a logged-in user who doesn't have a DB entry yet.
             const defaultSub: SubscriptionData = { plan: 'free', expiry: null, isActive: false };
             const defaultFeatures: UnlockedFeatures = {
                 traditionalTemplates: false,
@@ -92,6 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               subscription: defaultSub,
               unlockedFeatures: defaultFeatures
             });
+            // State will update on the next snapshot after the setDoc completes.
           }
           setLoading(false);
           clearTimeout(loadingTimeout);
@@ -117,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         firestoreUnsubscribe();
       }
     };
-  }, []); // Changed dependency array to []
+  }, []); // Empty dependency array ensures this runs only once.
 
   const updateSubscription = useCallback(async (data: Partial<SubscriptionData>) => {
     if (user && db) {

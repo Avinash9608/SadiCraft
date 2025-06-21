@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -57,7 +57,7 @@ export default function RegisterPage() {
         displayName: fullName,
       });
 
-      // Create user document in Firestore
+      // Create user document in Firestore with default values
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         name: fullName,

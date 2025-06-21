@@ -159,21 +159,36 @@ export default function CheckoutPage() {
                   isActive: true,
                   paymentId: response.razorpay_payment_id,
                 };
+                
+                // Unlock all features for this plan
+                const unlockedFeatures = {
+                    traditionalTemplates: true,
+                    adFree: true,
+                    videoProfile: ['gold', 'platinum'].includes(selectedProductKey),
+                    modernDownload: true,
+                    traditionalDownload: true,
+                };
+
                 await authContext.updateSubscription(subscriptionData);
+                await authContext.updateUnlockedFeatures(unlockedFeatures);
+
                 toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! You now have access to all its features.` });
                 router.push(redirectUrl);
+
             } else if (selectedProductKey === 'download_modern') {
                 await authContext.updateUnlockedFeatures({ modernDownload: true });
                 toast({ title: "Purchase Successful!", description: "Your download will begin shortly." });
                 router.push('/create?download_pending=modern');
+
             } else if (selectedProductKey === 'unlock_traditional') {
                 await authContext.updateUnlockedFeatures({ traditionalTemplates: true });
                 toast({ title: "Purchase Successful!", description: "Traditional layout has been unlocked." });
                 router.push(redirectUrl);
+
             } else if (selectedProductKey === 'download_traditional') {
                 await authContext.updateUnlockedFeatures({ traditionalTemplates: true, traditionalDownload: true });
                 toast({ title: "Purchase Successful!", description: "Your download will begin shortly." });
-                router.push(redirectUrl + "?download_pending=traditional");
+                router.push(redirectUrl + "&download_pending=traditional");
             }
           } else {
             toast({ variant: 'destructive', title: 'Payment Verification Failed', description: 'Please contact support.' });
