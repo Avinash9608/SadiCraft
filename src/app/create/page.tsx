@@ -93,9 +93,9 @@ export default function ShaadiCraftPage() {
         toast({
           variant: "destructive",
           title: "Upgrade Required",
-          description: "Please unlock the traditional layout before downloading.",
+          description: "Please purchase this layout to download.",
         });
-        router.push('/checkout?action=unlock_traditional&return_to_layout=traditional');
+        router.push('/checkout?action=download_traditional&return_to_layout=traditional');
       }
     }
   }, [authContext, form, router, toast, triggerPdfDownload]);
@@ -147,6 +147,16 @@ export default function ShaadiCraftPage() {
       triggerPdfDownload();
     }
   }, [triggerPdfDownload]);
+  
+  // Effect to handle post-payment download for traditional layout
+  useEffect(() => {
+    const traditionalDownloadPending = sessionStorage.getItem('traditional_download_pending') === 'true';
+    if (traditionalDownloadPending) {
+      sessionStorage.removeItem('traditional_download_pending'); // Use the flag once
+      triggerPdfDownload();
+    }
+  }, [triggerPdfDownload]);
+
 
   if (authContext?.loading || !authContext?.user) {
     return (

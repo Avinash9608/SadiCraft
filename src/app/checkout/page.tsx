@@ -63,6 +63,14 @@ const products = {
     period: 'one-time payment',
     description: 'Unlock access to the traditional layout for this biodata.',
     icon: Lock
+  },
+  download_traditional: {
+    id: 'action_download_traditional',
+    name: 'Download Traditional PDF',
+    price: 10,
+    period: 'one-time payment',
+    description: 'Get a high-quality PDF of your traditional-style biodata. This also unlocks the layout for viewing.',
+    icon: Download
   }
 };
 
@@ -130,6 +138,9 @@ export default function CheckoutPage() {
 
           if (result.success && selectedProductKey) {
             const isSubscription = ['silver', 'gold', 'platinum'].includes(selectedProductKey);
+            const returnToLayout = searchParams.get('return_to_layout');
+            const redirectUrl = returnToLayout ? `/create?layout=${returnToLayout}` : '/create';
+
 
             if (isSubscription) {
                 const now = new Date();
@@ -146,8 +157,6 @@ export default function CheckoutPage() {
                 };
                 authContext.updateSubscription(subscriptionData);
                 toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! You now have access to all its features.` });
-                const returnToLayout = searchParams.get('return_to_layout');
-                const redirectUrl = returnToLayout ? `/create?layout=${returnToLayout}` : '/create';
                 router.push(redirectUrl);
             } else if (selectedProductKey === 'download_modern') {
                 sessionStorage.setItem('modern_download_unlocked', 'true');
@@ -156,8 +165,11 @@ export default function CheckoutPage() {
             } else if (selectedProductKey === 'unlock_traditional') {
                 sessionStorage.setItem('traditional_unlocked', 'true');
                 toast({ title: "Purchase Successful!", description: "Traditional layout has been unlocked." });
-                const returnToLayout = searchParams.get('return_to_layout');
-                const redirectUrl = returnToLayout ? `/create?layout=${returnToLayout}` : '/create';
+                router.push(redirectUrl);
+            } else if (selectedProductKey === 'download_traditional') {
+                sessionStorage.setItem('traditional_unlocked', 'true'); // Unlock viewing
+                sessionStorage.setItem('traditional_download_pending', 'true'); // Trigger download
+                toast({ title: "Purchase Successful!", description: "Your download will begin shortly." });
                 router.push(redirectUrl);
             }
           } else {
