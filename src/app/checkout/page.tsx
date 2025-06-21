@@ -59,6 +59,18 @@ export default function CheckoutPage() {
   const [selectedProductKey, setSelectedProductKey] = useState<ProductKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
+  // New Effect: Redirect if user is already premium.
+  // This handles the case where the user lands here, or their status updates while on the page.
+  useEffect(() => {
+    if (authContext && !authContext.loading && authContext.isPremium) {
+      toast({
+        title: "Already Subscribed",
+        description: "You already have an active premium plan.",
+      });
+      router.push('/create');
+    }
+  }, [authContext, router, toast]);
+
   useEffect(() => {
     const plan = searchParams.get('plan') as ProductKey;
 
@@ -101,20 +113,27 @@ export default function CheckoutPage() {
         description: `Purchase of ${productDetails.name}`,
         order_id: order.id,
         handler: async function (response: any) {
-          const verificationData = {
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-          };
-          const result = await verifyPayment(verificationData);
+          try {
+            const verificationData = {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            };
+            const result = await verifyPayment(verificationData);
 
-          if (result.success && selectedProductKey) {
-            // This now updates Firestore, and AuthContext will react to it in real-time
-            await authContext.updateUserPlan(selectedProductKey as Plan, response.razorpay_payment_id);
-            toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! Your features are now active.` });
-            router.push('/create');
-          } else {
-            toast({ variant: 'destructive', title: 'Payment Verification Failed', description: 'Please contact support.' });
+            if (result.success && selectedProductKey) {
+              await authContext.updateUserPlan(selectedProductKey as Plan, response.razorpay_payment_id);
+              toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! Your features are now active.` });
+              // The new useEffect hook will also catch this, but explicit navigation is good.
+              router.push('/create');
+            } else {
+              toast({ variant: 'destructive', title: 'Payment Verification Failed', description: result.message || 'Please contact support.' });
+            }
+          } catch (handlerError) {
+              console.error("Error in payment handler:", handlerError);
+              toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred after payment. Please contact support.' });
+          } finally {
+             setIsLoading(false);
           }
         },
         prefill: {
@@ -130,13 +149,13 @@ export default function CheckoutPage() {
       rzp.on('payment.failed', (response: any) => {
         console.error(response.error);
         toast({ variant: "destructive", title: "Payment Failed", description: response.error.description || 'An unknown error occurred.' });
+        setIsLoading(false);
       });
       rzp.open();
 
     } catch (error) {
       console.error("Payment error:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not initiate payment. Please try again.' });
-    } finally {
       setIsLoading(false);
     }
   };
