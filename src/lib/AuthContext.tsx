@@ -99,13 +99,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const now = Timestamp.now();
             let isActive = sub?.isActive && (sub.expiryDate === null || (sub.expiryDate && sub.expiryDate > now));
             
-            // This is a good place for a Cloud Function to handle expirations,
-            // but a client-side check is a decent fallback.
             if (sub?.isActive && !isActive) {
                 console.log("Subscription expired for user:", firebaseUser.uid, "Updating status.");
                 updateDoc(userDocRef, { 
                     'subscription.isActive': false,
-                    'features': defaultFeatures // Reset features to free tier
+                    'features': defaultFeatures
                 });
             }
 
@@ -116,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setLoading(false);
           clearTimeout(loadingTimeout);
         }, (error) => {
-          console.error("Error with Firestore snapshot:", error);
+          console.error("AuthContext: Firestore snapshot error:", error.code, error.message, error);
           setLoading(false);
           clearTimeout(loadingTimeout);
         });
@@ -137,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         firestoreUnsubscribe();
       }
     };
-  }, []); // Empty dependency array ensures this runs only once.
+  }, []);
 
   const updateUserPlan = useCallback(async (plan: Plan, paymentId: string) => {
     if (!user || !db) return;
@@ -146,7 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         let newSubscription: SubscriptionData;
-        let newFeatures: Features = { ...defaultFeatures }; // Start with a full default object
+        let newFeatures: Features = { ...defaultFeatures }; 
 
         const now = new Date();
         const startDate = Timestamp.fromDate(now);
@@ -154,7 +152,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           new Date(new Date().setFullYear(now.getFullYear() + 1))
         );
 
-        // Base features for any premium plan
         const basePremiumFeatures = {
           unlimitedViews: true,
           contactAccess: true,
@@ -176,7 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             astroReports: 5,
           };
         } else if (plan === 'platinum') {
-          expiryDate = null; // Lifetime plan
+          expiryDate = null;
           newFeatures = {
             ...newFeatures,
             ...basePremiumFeatures,
@@ -184,15 +181,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             whatsAppAlerts: true,
             astroReports: 10,
             relationshipManager: true,
-            // Assuming this is a one-time grant on purchase, or handled by a monthly cron job
             remainingBoosts: 1, 
           };
         }
-
+        
         newSubscription = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
         
-        // Use updateDoc to update the specific fields.
-        // This is safer than setDoc with merge if the document is guaranteed to exist.
         await updateDoc(userDocRef, {
             subscription: newSubscription,
             features: newFeatures,
@@ -200,7 +194,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error) {
         console.error("Error updating user plan:", error);
-        // Optionally, re-throw or handle the error for the UI
     }
   }, [user]);
 

@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, type Firestore } from "firebase/firestore";
 
 // IMPORTANT: 
 // Create a file named .env.local in the root of your project
@@ -35,7 +35,10 @@ const isFirebaseConfigProvided = firebaseConfig.apiKey && firebaseConfig.authDom
 if (isFirebaseConfigProvided) {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
-    db = getFirestore(app);
+    // Initialize Firestore with long-polling to avoid WebSocket issues
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+    });
 } else {
     // If config is not provided, we cannot initialize Firebase.
     // To prevent the app from crashing, we'll export dummy objects.
