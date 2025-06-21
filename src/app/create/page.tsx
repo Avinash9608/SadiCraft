@@ -1,10 +1,14 @@
 
 "use client";
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+
 import { biodataSchema, type BiodataFormValues, defaultBiodataValues } from '@/lib/zod-schemas';
+import { AuthContext } from '@/lib/AuthContext';
+import { Spinner } from '@/components/Spinner';
 
 import AppHeader from '@/components/shaadicraft/AppHeader';
 import BiodataForm from '@/components/shaadicraft/BiodataForm';
@@ -13,6 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from "@/hooks/use-toast";
 
 export default function ShaadiCraftPage() {
+  const router = useRouter();
+  const authContext = useContext(AuthContext);
+
   const form = useForm<BiodataFormValues>({
     resolver: zodResolver(biodataSchema),
     defaultValues: defaultBiodataValues,
@@ -22,7 +29,6 @@ export default function ShaadiCraftPage() {
   const watchedValues = form.watch();
   const { formState: { isDirty } } = form;
   const { toast } = useToast();
-
 
   const handleDownloadPdf = useCallback(async () => {
     if (typeof window !== 'undefined') {
@@ -73,6 +79,20 @@ export default function ShaadiCraftPage() {
       }
     }
   }, [form, toast]);
+  
+  // Auth Guard
+  if (authContext?.loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Spinner className="h-10 w-10" />
+      </div>
+    );
+  }
+
+  if (!authContext?.user) {
+    router.push('/login');
+    return null; // Render nothing while redirecting
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -82,12 +102,14 @@ export default function ShaadiCraftPage() {
           {/* Form Section */}
           <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)] no-print mb-6 lg:mb-0">
             <div className="p-1 md:p-4 rounded-lg">
-               {/* Ad Placeholder */}
-              <div className="mb-6">
-                <div className="w-[300px] h-[250px] mx-auto bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
-                  <p className="text-muted-foreground text-center">Advertisement<br/>(300x250)</p>
+              {/* Ad Placeholder - Shown only to Free users */}
+              {!authContext.isPremium && (
+                 <div className="mb-6">
+                  <div className="w-[300px] h-[250px] mx-auto bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
+                    <p className="text-muted-foreground text-center">Advertisement<br/>(300x250)</p>
+                  </div>
                 </div>
-              </div>
+              )}
               <BiodataForm form={form} />
             </div>
           </ScrollArea>

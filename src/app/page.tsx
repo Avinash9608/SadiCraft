@@ -115,7 +115,7 @@ export default function LandingPage() {
                 ]}
                 buttonText="Upgrade Now"
                 isPopular
-                buttonLink="/register"
+                buttonLink="/checkout"
               />
               <PricingCard
                 title="Premium Yearly"
@@ -129,7 +129,7 @@ export default function LandingPage() {
                     "Video Profile Upload",
                 ]}
                 buttonText="Choose Yearly"
-                buttonLink="/register"
+                buttonLink="/checkout"
               />
             </div>
           </div>
