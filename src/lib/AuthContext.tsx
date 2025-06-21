@@ -44,22 +44,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!db || !auth) {
+      console.warn("Firebase not configured. Auth features disabled.");
       setLoading(false);
       return;
     }
 
-    // Add a timeout to prevent indefinite loading state, which can cause server timeouts.
     const loadingTimeout = setTimeout(() => {
       if (loading) {
         console.warn("AuthContext: Loading timed out after 10 seconds. Forcing UI to render.");
         setLoading(false);
       }
-    }, 10000); // 10-second timeout
+    }, 10000);
 
     let firestoreUnsubscribe: (() => void) | null = null;
 
     const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      // Clean up previous Firestore listener if it exists
       if (firestoreUnsubscribe) {
         firestoreUnsubscribe();
       }
@@ -79,7 +78,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setSubscription(sub);
             setUnlockedFeatures(data.unlockedFeatures as UnlockedFeatures);
           } else {
-            // User doc doesn't exist, create it with default free tier
             const defaultSub: SubscriptionData = { plan: 'free', expiry: null, isActive: false };
             const defaultFeatures: UnlockedFeatures = {
                 traditionalTemplates: false,
@@ -96,21 +94,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           }
           setLoading(false);
+          clearTimeout(loadingTimeout);
         }, (error) => {
           console.error("Error with Firestore snapshot:", error);
           setLoading(false);
+          clearTimeout(loadingTimeout);
         });
       } else {
-        // User logged out
         setUser(null);
         setIsPremium(false);
         setSubscription(null);
         setUnlockedFeatures(null);
         setLoading(false);
+        clearTimeout(loadingTimeout);
       }
     });
 
-    // Cleanup on component unmount
     return () => {
       clearTimeout(loadingTimeout);
       authUnsubscribe();
@@ -118,10 +117,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         firestoreUnsubscribe();
       }
     };
-  }, [loading]);
+  }, []); // Changed dependency array to []
 
   const updateSubscription = useCallback(async (data: Partial<SubscriptionData>) => {
-    if (user) {
+    if (user && db) {
       const userDocRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
@@ -134,7 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const updateUnlockedFeatures = useCallback(async (data: Partial<UnlockedFeatures>) => {
-    if (user) {
+    if (user && db) {
         const userDocRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
