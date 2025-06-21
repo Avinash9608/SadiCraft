@@ -14,6 +14,7 @@ import { FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from '@/components/Spinner';
+import type { SubscriptionData, Features } from '@/lib/AuthContext';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,22 +58,35 @@ export default function RegisterPage() {
         displayName: fullName,
       });
 
+      const defaultSub: SubscriptionData = {
+        plan: "free",
+        startDate: null,
+        expiryDate: null,
+        isActive: false,
+      };
+
+      const defaultFeatures: Features = {
+        unlimitedViews: false,
+        contactAccess: false,
+        videoProfile: false,
+        adFree: false,
+        priorityListing: false,
+        advancedFilters: false,
+        verifiedBadge: false,
+        allTemplates: false,
+        whatsAppAlerts: false,
+        astroReports: 0,
+        remainingBoosts: 0,
+        relationshipManager: false,
+      };
+
       // Create user document in Firestore with default values
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         name: fullName,
-        subscription: {
-          plan: "free",
-          expiry: null,
-          isActive: false,
-        },
-        unlockedFeatures: {
-          traditionalTemplates: false,
-          adFree: false,
-          videoProfile: false,
-          modernDownload: false,
-          traditionalDownload: false,
-        }
+        createdAt: Timestamp.now(),
+        subscription: defaultSub,
+        features: defaultFeatures,
       });
 
       toast({

@@ -75,23 +75,20 @@ export default function ShaadiCraftPage() {
   }, [form, toast, setValue]);
 
   const handleDownloadPdf = useCallback(async () => {
-    if (!authContext?.unlockedFeatures) return;
+    if (!authContext?.features) return;
 
-    const { isPremium, unlockedFeatures } = authContext;
+    const { features } = authContext;
     const layout = form.getValues('layout');
     
-    if (layout === 'modern') {
-      if (isPremium || unlockedFeatures.modernDownload) {
-        triggerPdfDownload('modern');
-      } else {
-        router.push('/checkout?action=download_modern');
-      }
-    } else if (layout === 'traditional') {
-      if (isPremium || unlockedFeatures.traditionalDownload) {
-        triggerPdfDownload('traditional');
-      } else {
-        router.push('/checkout?action=download_traditional&return_to_layout=traditional');
-      }
+    if (features.allTemplates) { // All premium plans allow downloading all templates
+        triggerPdfDownload(layout);
+    } else {
+        // For free users, direct them to upgrade. Let's send them to Silver as a default.
+        toast({
+            title: "Upgrade Required",
+            description: "Please upgrade to a premium plan to download your biodata.",
+        });
+        router.push('/checkout?plan=silver');
     }
   }, [authContext, form, router, triggerPdfDownload]);
 
@@ -124,33 +121,6 @@ export default function ShaadiCraftPage() {
     }
   }, [authContext, router]);
 
-  // Set layout from URL parameter on initial load
-  useEffect(() => {
-    const layoutParam = searchParams.get('layout');
-    if (layoutParam === 'modern' || layoutParam === 'traditional') {
-      setValue('layout', layoutParam, { shouldDirty: true });
-      // Clean the URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
-    }
-  }, [searchParams, setValue]); 
-
-  // Effect to handle post-payment download
-  useEffect(() => {
-    const downloadPending = searchParams.get('download_pending');
-    if (downloadPending) {
-        if(downloadPending === 'modern' && authContext?.unlockedFeatures?.modernDownload) {
-            triggerPdfDownload('modern');
-        } else if (downloadPending === 'traditional' && authContext?.unlockedFeatures?.traditionalDownload) {
-            triggerPdfDownload('traditional');
-        }
-        // Clean the URL from search params
-        const newUrl = window.location.pathname;
-        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
-    }
-  }, [searchParams, authContext, triggerPdfDownload]);
-
-
   if (authContext?.loading || !authContext?.user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -166,7 +136,7 @@ export default function ShaadiCraftPage() {
         <div className="flex flex-col lg:flex-row lg:space-x-6 h-full">
           <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)] no-print mb-6 lg:mb-0">
             <div className="p-1 md:p-4 rounded-lg">
-              {(!authContext.isPremium && !authContext.unlockedFeatures?.adFree) && (
+              {(!authContext.features?.adFree) && (
                  <div className="mb-6">
                   <div className="w-[300px] h-[250px] mx-auto bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
                     <p className="text-muted-foreground text-center">Advertisement<br/>(300x250)</p>

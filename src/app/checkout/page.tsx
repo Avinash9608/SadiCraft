@@ -4,15 +4,14 @@
 import { useState, useEffect, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { Timestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { FileText, ArrowLeft, Loader2, Star, Download, Lock } from 'lucide-react';
+import { FileText, ArrowLeft, Loader2, Star } from 'lucide-react';
 import Link from 'next/link';
 
 import { useToast } from "@/hooks/use-toast";
-import { AuthContext, type SubscriptionData } from '@/lib/AuthContext';
+import { AuthContext, type Plan } from '@/lib/AuthContext';
 import { Spinner } from '@/components/Spinner';
 import { createOrder, verifyPayment } from '@/app/actions/paymentActions';
 
@@ -23,15 +22,13 @@ declare global {
 }
 
 const products = {
-  // Subscription Plans
   silver: {
-    id: 'plan_silver_monthly',
+    id: 'plan_silver_yearly',
     name: 'Silver Plan',
-    price: 299,
-    period: '/month',
-    description: 'Unlock core premium features for 30 days.',
+    price: 999,
+    period: '/year',
+    description: 'Unlock core premium features for one year.',
     icon: Star,
-    durationDays: 30,
   },
   gold: {
     id: 'plan_gold_yearly',
@@ -40,7 +37,6 @@ const products = {
     period: '/year',
     description: 'Best value with all features for a full year.',
     icon: Star,
-    durationDays: 365,
   },
   platinum: {
     id: 'plan_platinum_lifetime',
@@ -49,33 +45,7 @@ const products = {
     period: 'one-time',
     description: 'Lifetime access and exclusive monthly perks.',
     icon: Star,
-    durationDays: null, // Lifetime
   },
-  // One-time Actions
-  download_modern: {
-    id: 'action_download_modern',
-    name: 'Download Modern PDF',
-    price: 7,
-    period: 'one-time payment',
-    description: 'Get a high-quality PDF of your modern-style biodata.',
-    icon: Download
-  },
-  unlock_traditional: {
-    id: 'action_unlock_traditional',
-    name: 'Unlock Traditional Layout',
-    price: 10,
-    period: 'one-time payment',
-    description: 'Unlock access to the traditional layout for this biodata.',
-    icon: Lock
-  },
-  download_traditional: {
-    id: 'action_download_traditional',
-    name: 'Download Traditional PDF',
-    price: 10,
-    period: 'one-time payment',
-    description: 'Get a high-quality PDF of your traditional-style biodata. This also unlocks the layout for viewing.',
-    icon: Download
-  }
 };
 
 type ProductKey = keyof typeof products;
@@ -91,20 +61,18 @@ export default function CheckoutPage() {
   
   useEffect(() => {
     const plan = searchParams.get('plan') as ProductKey;
-    const action = searchParams.get('action') as ProductKey;
-    const productKey = plan || action;
 
-    if (productKey && products[productKey]) {
-      setSelectedProductKey(productKey);
+    if (plan && products[plan]) {
+      setSelectedProductKey(plan);
     } else {
-      router.push('/create');
+      router.push('/#pricing');
     }
   }, [searchParams, router]);
 
   const handlePayment = async () => {
     setIsLoading(true);
 
-    if (!authContext?.user || !authContext.updateSubscription || !authContext.updateUnlockedFeatures) {
+    if (!authContext?.user || !authContext.updateUserPlan) {
       toast({ variant: 'destructive', title: 'Not Logged In', description: 'Please log in to make a purchase.' });
       if (!authContext?.user) router.push('/login');
       setIsLoading(false);
@@ -140,56 +108,9 @@ export default function CheckoutPage() {
           const result = await verifyPayment(verificationData);
 
           if (result.success && selectedProductKey) {
-            const isSubscription = ['silver', 'gold', 'platinum'].includes(selectedProductKey);
-            const returnToLayout = searchParams.get('return_to_layout');
-            let redirectUrl = returnToLayout ? `/create?layout=${returnToLayout}` : '/create';
-
-            if (isSubscription) {
-                const subProduct = products[selectedProductKey as 'silver' | 'gold' | 'platinum'];
-                let expiryDate: Timestamp | null = null;
-                if (subProduct.durationDays) {
-                    const now = new Date();
-                    now.setDate(now.getDate() + subProduct.durationDays);
-                    expiryDate = Timestamp.fromDate(now);
-                }
-
-                const subscriptionData: Partial<SubscriptionData> = {
-                  plan: selectedProductKey as 'silver' | 'gold' | 'platinum',
-                  expiry: expiryDate,
-                  isActive: true,
-                  paymentId: response.razorpay_payment_id,
-                };
-                
-                // Unlock all features for this plan
-                const unlockedFeatures = {
-                    traditionalTemplates: true,
-                    adFree: true,
-                    videoProfile: ['gold', 'platinum'].includes(selectedProductKey),
-                    modernDownload: true,
-                    traditionalDownload: true,
-                };
-
-                await authContext.updateSubscription(subscriptionData);
-                await authContext.updateUnlockedFeatures(unlockedFeatures);
-
-                toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! You now have access to all its features.` });
-                router.push(redirectUrl);
-
-            } else if (selectedProductKey === 'download_modern') {
-                await authContext.updateUnlockedFeatures({ modernDownload: true });
-                toast({ title: "Purchase Successful!", description: "Your download will begin shortly." });
-                router.push('/create?download_pending=modern');
-
-            } else if (selectedProductKey === 'unlock_traditional') {
-                await authContext.updateUnlockedFeatures({ traditionalTemplates: true });
-                toast({ title: "Purchase Successful!", description: "Traditional layout has been unlocked." });
-                router.push(redirectUrl);
-
-            } else if (selectedProductKey === 'download_traditional') {
-                await authContext.updateUnlockedFeatures({ traditionalTemplates: true, traditionalDownload: true });
-                toast({ title: "Purchase Successful!", description: "Your download will begin shortly." });
-                router.push(redirectUrl + "&download_pending=traditional");
-            }
+            await authContext.updateUserPlan(selectedProductKey as Plan, response.razorpay_payment_id);
+            toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! You now have access to all its features.` });
+            router.push('/create');
           } else {
             toast({ variant: 'destructive', title: 'Payment Verification Failed', description: 'Please contact support.' });
           }

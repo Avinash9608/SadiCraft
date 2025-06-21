@@ -21,13 +21,11 @@ export default function LandingPage() {
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      localStorage.removeItem('isPremium'); // Clear premium status on logout
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
       });
       router.push('/');
-      router.refresh();
     } catch (error) {
       console.error("Logout Error:", error);
       toast({
@@ -152,8 +150,8 @@ export default function LandingPage() {
               />
               <PricingCard
                 title="Silver"
-                price="₹299"
-                period="/month"
+                price="₹999"
+                period="/year"
                 description="Unlock core premium features."
                 features={[
                   "Unlimited Profile Views",
@@ -179,7 +177,6 @@ export default function LandingPage() {
                     "Video Profile Upload",
                     "SMS/WhatsApp Match Alerts",
                     "5 Free Astro Reports",
-                    "Best value (Save 30%)"
                 ]}
                 buttonText="Choose Gold"
                 buttonLink="/checkout?plan=gold"
@@ -213,17 +210,17 @@ export default function LandingPage() {
                     <div className="text-center p-6 bg-card rounded-lg shadow-sm">
                         <Video className="mx-auto h-12 w-12 text-primary mb-4" />
                         <h4 className="text-xl font-semibold mb-2">Video Profiles</h4>
-                        <p className="text-muted-foreground">Upload a 1-min intro video to show your personality.</p>
+                        <p className="text-muted-foreground">Upload a 1-min intro video to show your personality. (Gold+)</p>
                     </div>
                      <div className="text-center p-6 bg-card rounded-lg shadow-sm">
                         <BarChart className="mx-auto h-12 w-12 text-primary mb-4" />
-                        <h4 className="text-xl font-semibold mb-2">Profile Boosts (₹50)</h4>
-                        <p className="text-muted-foreground">Highlight your profile in search results for 24 hours.</p>
+                        <h4 className="text-xl font-semibold mb-2">Profile Boosts</h4>
+                        <p className="text-muted-foreground">Highlight your profile in search results. (Platinum)</p>
                     </div>
                     <div className="text-center p-6 bg-card rounded-lg shadow-sm">
                         <Star className="mx-auto h-12 w-12 text-primary mb-4" />
-                        <h4 className="text-xl font-semibold mb-2">Astro Matching (₹99)</h4>
-                        <p className="text-muted-foreground">Get AI-powered horoscope compatibility reports.</p>
+                        <h4 className="text-xl font-semibold mb-2">Astro Matching</h4>
+                        <p className="text-muted-foreground">Get AI-powered horoscope compatibility reports. (Gold+)</p>
                     </div>
                 </div>
             </div>

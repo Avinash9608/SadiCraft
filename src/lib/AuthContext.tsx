@@ -10,17 +10,25 @@ export type Plan = 'free' | 'silver' | 'gold' | 'platinum';
 
 export interface SubscriptionData {
   plan: Plan;
-  expiry: Timestamp | null;
+  startDate: Timestamp | null;
+  expiryDate: Timestamp | null;
   isActive: boolean;
   paymentId?: string;
 }
 
-export interface UnlockedFeatures {
-  traditionalTemplates: boolean;
-  adFree: boolean;
+export interface Features {
+  unlimitedViews: boolean;
+  contactAccess: boolean;
   videoProfile: boolean;
-  modernDownload: boolean;
-  traditionalDownload: boolean;
+  adFree: boolean;
+  priorityListing: boolean;
+  advancedFilters: boolean;
+  verifiedBadge: boolean;
+  allTemplates: boolean;
+  whatsAppAlerts: boolean;
+  astroReports: number;
+  remainingBoosts: number;
+  relationshipManager: boolean;
 }
 
 interface AuthContextType {
@@ -28,9 +36,8 @@ interface AuthContextType {
   loading: boolean;
   isPremium: boolean;
   subscription: SubscriptionData | null;
-  unlockedFeatures: UnlockedFeatures | null;
-  updateSubscription: (data: Partial<SubscriptionData>) => Promise<void>;
-  updateUnlockedFeatures: (data: Partial<UnlockedFeatures>) => Promise<void>;
+  features: Features | null;
+  updateUserPlan: (plan: 'silver' | 'gold' | 'platinum', paymentId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -40,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
-  const [unlockedFeatures, setUnlockedFeatures] = useState<UnlockedFeatures | null>(null);
+  const [features, setFeatures] = useState<Features | null>(null);
 
   useEffect(() => {
     if (!db || !auth) {
@@ -71,29 +78,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             const sub = data.subscription as SubscriptionData;
-            const now = Timestamp.now();
-            const isActive = sub && sub.isActive && (sub.expiry === null || (sub.expiry && sub.expiry > now));
             
+            // Check if subscription is active
+            const now = Timestamp.now();
+            const isActive = sub && sub.isActive && (sub.expiryDate === null || (sub.expiryDate && sub.expiryDate > now));
+            
+            // If subscription has expired, update it in DB (this could also be a daily cloud function)
+            if (sub && sub.isActive && !isActive) {
+                console.log("Subscription expired, updating status.");
+                updateDoc(userDocRef, { 'subscription.isActive': false });
+            }
+
             setIsPremium(isActive);
             setSubscription(sub);
-            setUnlockedFeatures(data.unlockedFeatures as UnlockedFeatures);
+            setFeatures(data.features as Features);
+
           } else {
-            // This case handles a logged-in user who doesn't have a DB entry yet.
-            const defaultSub: SubscriptionData = { plan: 'free', expiry: null, isActive: false };
-            const defaultFeatures: UnlockedFeatures = {
-                traditionalTemplates: false,
-                adFree: false,
-                videoProfile: false,
-                modernDownload: false,
-                traditionalDownload: false,
-            };
-            setDoc(userDocRef, {
-              email: firebaseUser.email,
-              name: firebaseUser.displayName,
-              subscription: defaultSub,
-              unlockedFeatures: defaultFeatures
-            });
-            // State will update on the next snapshot after the setDoc completes.
+             // This case handles a logged-in user who doesn't have a DB entry yet.
+             // This can happen if registration is interrupted.
+            console.log("User document not found, creating one for:", firebaseUser.uid);
+            // Default data structures are now created on registration page.
+            // If we reach here, something went wrong, but we can try to recover.
           }
           setLoading(false);
           clearTimeout(loadingTimeout);
@@ -106,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setIsPremium(false);
         setSubscription(null);
-        setUnlockedFeatures(null);
+        setFeatures(null);
         setLoading(false);
         clearTimeout(loadingTimeout);
       }
@@ -121,29 +126,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []); // Empty dependency array ensures this runs only once.
 
-  const updateSubscription = useCallback(async (data: Partial<SubscriptionData>) => {
+  const updateUserPlan = useCallback(async (plan: 'silver' | 'gold' | 'platinum', paymentId: string) => {
     if (user && db) {
       const userDocRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        const existingData = docSnap.data().subscription || {};
-        await updateDoc(userDocRef, {
-          subscription: { ...existingData, ...data }
-        });
-      }
-    }
-  }, [user]);
+      
+      let newSubscription: SubscriptionData;
+      let newFeatures: Partial<Features>;
 
-  const updateUnlockedFeatures = useCallback(async (data: Partial<UnlockedFeatures>) => {
-    if (user && db) {
-        const userDocRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-            const existingData = docSnap.data().unlockedFeatures || {};
-            await updateDoc(userDocRef, {
-                unlockedFeatures: { ...existingData, ...data }
-            });
-        }
+      const now = new Date();
+      const startDate = Timestamp.fromDate(now);
+      let expiryDate: Timestamp | null = Timestamp.fromDate(new Date(now.setFullYear(now.getFullYear() + 1)));
+
+      // Common features for all premium plans
+      const basePremiumFeatures = {
+        unlimitedViews: true,
+        contactAccess: true,
+        adFree: true,
+        priorityListing: true,
+        advancedFilters: true,
+        verifiedBadge: true,
+        allTemplates: true,
+      };
+
+      if (plan === 'silver') {
+        newSubscription = { plan, startDate, expiryDate, isActive: true, paymentId };
+        newFeatures = { ...basePremiumFeatures };
+      } else if (plan === 'gold') {
+        newSubscription = { plan, startDate, expiryDate, isActive: true, paymentId };
+        newFeatures = { ...basePremiumFeatures, videoProfile: true, whatsAppAlerts: true, astroReports: 5 };
+      } else if (plan === 'platinum') {
+        newSubscription = { plan, startDate, expiryDate: null, isActive: true, paymentId };
+        newFeatures = { 
+            ...basePremiumFeatures, 
+            videoProfile: true, 
+            whatsAppAlerts: true, 
+            astroReports: 10,
+            relationshipManager: true, // This might need a date check on the client
+            // Boosts would be handled by a backend function, but we can set the first one
+            remainingBoosts: 1
+        };
+      } else {
+        return; // Invalid plan
+      }
+
+      await updateDoc(userDocRef, {
+        subscription: newSubscription,
+        features: newFeatures
+      });
     }
   }, [user]);
 
@@ -152,9 +181,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading,
     isPremium,
     subscription,
-    unlockedFeatures,
-    updateSubscription,
-    updateUnlockedFeatures,
+    features,
+    updateUserPlan,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

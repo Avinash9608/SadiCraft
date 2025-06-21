@@ -19,20 +19,20 @@ interface BiodataPreviewProps {
 const TraditionalLayoutLock: React.FC = () => (
   <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg p-4">
     <Lock className="h-16 w-16 text-primary mb-4" />
-    <h3 className="text-2xl font-bold text-primary-foreground mb-2 text-center">Unlock Traditional Layout</h3>
+    <h3 className="text-2xl font-bold text-primary-foreground mb-2 text-center">Upgrade to Unlock</h3>
     <p className="text-center text-primary-foreground/80 mb-6 max-w-xs">
-      Unlock this beautiful layout for a one-time payment of just ₹10, or upgrade to a subscription for full access.
+      This beautiful traditional layout is a premium feature. Upgrade to a Silver plan or higher to use it.
     </p>
     <div className="flex flex-col gap-2 w-full max-w-xs">
        <Button asChild size="lg">
-        <Link href="/checkout?action=unlock_traditional&return_to_layout=traditional">
-          Pay ₹10 to Unlock
+        <Link href="/checkout?plan=silver">
+           <Star className="mr-2 h-4 w-4" />
+           Upgrade to Silver
         </Link>
       </Button>
       <Button asChild variant="outline" size="lg">
         <Link href="/#pricing">
-           <Star className="mr-2 h-4 w-4" />
-           View Subscription Plans
+           View All Plans
         </Link>
       </Button>
     </div>
@@ -72,8 +72,8 @@ const BiodataPreview: React.FC<BiodataPreviewProps> = ({ data, isDirty }) => {
   }
 
   const isPremiumLayout = data.layout === 'traditional';
-  const traditionalUnlocked = authContext?.unlockedFeatures?.traditionalTemplates ?? false;
-  const showLock = isPremiumLayout && !authContext?.isPremium && !traditionalUnlocked;
+  const templatesUnlocked = authContext?.features?.allTemplates ?? false;
+  const showLock = isPremiumLayout && !templatesUnlocked;
 
   const layoutComponent = data.layout === 'modern' 
     ? <ModernLayout data={data} /> 

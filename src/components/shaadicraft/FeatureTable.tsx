@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Check, X, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -11,38 +12,32 @@ const features = [
       { name: 'Profile Views', free: '5 per day', silver: 'Unlimited', gold: 'Unlimited', platinum: 'Unlimited' },
       { name: 'Send Interests', free: '3 per month', silver: 'Unlimited', gold: 'Unlimited', platinum: 'Unlimited' },
       { name: 'Ad-Free Experience', free: false, silver: true, gold: true, platinum: true },
-      { name: 'Basic Search Filters', free: true, silver: true, gold: true, platinum: true },
+      { name: 'All Biodata Templates', free: false, silver: true, gold: true, platinum: true },
     ]
   },
   { 
-    category: 'Premium Communication', 
+    category: 'Communication', 
     items: [
-      { name: 'Contact Details Access', free: false, silver: true, gold: true, platinum: true },
-      { name: 'Priority Messaging', free: false, silver: true, gold: true, platinum: true },
+      { name: 'View Contact Details', free: false, silver: true, gold: true, platinum: true },
+      { name: 'Advanced Search Filters', free: false, silver: true, gold: true, platinum: true },
+      { name: 'Priority Listing in Search', free: false, silver: true, gold: true, platinum: true },
     ]
   },
   { 
     category: 'Profile Enhancement', 
     items: [
       { name: 'Verified Profile Badge', free: false, silver: true, gold: true, platinum: true },
-      { name: 'Custom Biodata Templates', free: '1 Template', silver: 'All Templates', gold: 'All Templates', platinum: 'All Templates' },
       { name: 'Video Profile Upload', free: false, silver: false, gold: true, platinum: true },
     ]
   },
   {
-    category: 'Search & Visibility',
-    items: [
-      { name: 'Advanced Filters', free: false, silver: true, gold: true, platinum: true },
-      { name: 'Priority Listing', free: false, silver: true, gold: true, platinum: true },
-      { name: 'Monthly Profile Boosts', free: false, silver: false, gold: false, platinum: '1 per month' },
-    ]
-  },
-  {
-    category: 'Exclusive Tools',
+    category: 'Exclusive Perks',
     items: [
       { name: 'SMS/WhatsApp Match Alerts', free: false, silver: false, gold: true, platinum: true },
-      { name: 'Astro Compatibility Reports', free: false, silver: 'Add-on (₹99)', gold: '5 Free', platinum: '10 Free' },
+      { name: 'Astro Compatibility Reports', free: false, silver: false, gold: '5 Free', platinum: '10 Free' },
+      { name: 'Monthly Profile Boosts', free: false, silver: false, gold: false, platinum: '1 per month' },
       { name: 'Dedicated Relationship Manager', free: false, silver: false, gold: false, platinum: 'First 3 Months' },
+      { name: 'Lifetime Validity', free: false, silver: false, gold: false, platinum: true },
     ]
   },
 ];
@@ -63,11 +58,11 @@ const FeatureTable = () => {
           <tr className="bg-muted/50">
             <th className="py-4 px-2 md:px-6 text-lg font-semibold text-foreground w-1/3">Features</th>
             <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-foreground">Free</th>
-            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-foreground">Silver</th>
             <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-primary">
-                Gold <Badge className="ml-2">Popular</Badge>
+                Silver <Badge className="ml-2">Popular</Badge>
             </th>
-             <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-yellow-500">
+            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-foreground">Gold</th>
+            <th className="py-4 px-2 md:px-6 text-lg font-semibold text-center text-yellow-500">
                 <div className="flex items-center justify-center">
                     <Star className="mr-2 h-5 w-5 text-yellow-400" /> Platinum
                 </div>
@@ -86,10 +81,10 @@ const FeatureTable = () => {
                     <td className="py-3 px-2 md:px-6 text-center text-muted-foreground">
                         <FeatureValue value={feature.free} />
                     </td>
-                    <td className="py-3 px-2 md:px-6 text-center text-muted-foreground">
+                    <td className="py-3 px-2 md:px-6 text-center font-semibold text-primary">
                        <FeatureValue value={feature.silver} />
                     </td>
-                    <td className="py-3 px-2 md:px-6 text-center font-semibold text-primary">
+                    <td className="py-3 px-2 md:px-6 text-center text-muted-foreground">
                         <FeatureValue value={feature.gold} />
                     </td>
                      <td className="py-3 px-2 md:px-6 text-center font-semibold text-yellow-600">
