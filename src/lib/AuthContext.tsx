@@ -48,6 +48,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // Add a timeout to prevent indefinite loading state, which can cause server timeouts.
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn("AuthContext: Loading timed out after 10 seconds. Forcing UI to render.");
+        setLoading(false);
+      }
+    }, 10000); // 10-second timeout
+
     let firestoreUnsubscribe: (() => void) | null = null;
 
     const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -104,12 +112,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Cleanup on component unmount
     return () => {
+      clearTimeout(loadingTimeout);
       authUnsubscribe();
       if (firestoreUnsubscribe) {
         firestoreUnsubscribe();
       }
     };
-  }, []);
+  }, [loading]);
 
   const updateSubscription = useCallback(async (data: Partial<SubscriptionData>) => {
     if (user) {
