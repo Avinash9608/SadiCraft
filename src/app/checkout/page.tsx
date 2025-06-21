@@ -59,17 +59,19 @@ export default function CheckoutPage() {
   const [selectedProductKey, setSelectedProductKey] = useState<ProductKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // New Effect: Redirect if user is already premium.
+  const { isPremium, loading: authLoading } = authContext ?? {};
+
+  // Redirect if user is already premium.
   // This handles the case where the user lands here, or their status updates while on the page.
   useEffect(() => {
-    if (authContext && !authContext.loading && authContext.isPremium) {
+    if (!authLoading && isPremium) {
       toast({
         title: "Already Subscribed",
         description: "You already have an active premium plan.",
       });
       router.push('/create');
     }
-  }, [authContext, router, toast]);
+  }, [isPremium, authLoading, router, toast]);
 
   useEffect(() => {
     const plan = searchParams.get('plan') as ProductKey;
@@ -113,6 +115,7 @@ export default function CheckoutPage() {
         description: `Purchase of ${productDetails.name}`,
         order_id: order.id,
         handler: async function (response: any) {
+          setIsLoading(true); // Keep loading during verification and update
           try {
             const verificationData = {
               razorpay_order_id: response.razorpay_order_id,
@@ -122,18 +125,18 @@ export default function CheckoutPage() {
             const result = await verifyPayment(verificationData);
 
             if (result.success && selectedProductKey) {
-              await authContext.updateUserPlan(selectedProductKey as Plan, response.razorpay_payment_id);
+              const plan = selectedProductKey as Plan;
+              await authContext.updateUserPlan(plan, response.razorpay_payment_id);
               toast({ title: "Payment Successful!", description: `Welcome to the ${productDetails.name}! Your features are now active.` });
-              // The new useEffect hook will also catch this, but explicit navigation is good.
-              router.push('/create');
+              router.push('/create'); // Direct navigation after successful update
             } else {
               toast({ variant: 'destructive', title: 'Payment Verification Failed', description: result.message || 'Please contact support.' });
+              setIsLoading(false);
             }
           } catch (handlerError) {
               console.error("Error in payment handler:", handlerError);
               toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred after payment. Please contact support.' });
-          } finally {
-             setIsLoading(false);
+              setIsLoading(false);
           }
         },
         prefill: {
@@ -156,11 +159,11 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Payment error:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not initiate payment. Please try again.' });
-      setIsLoading(false);
     }
+     // Don't set isLoading to false here, the handler or failure callback will do it.
   };
   
-  if (authContext?.loading || !selectedProductKey) {
+  if (authLoading || !selectedProductKey) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Spinner className="h-10 w-10" />

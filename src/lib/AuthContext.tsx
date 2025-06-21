@@ -38,10 +38,26 @@ interface AuthContextType {
   isPremium: boolean;
   subscription: SubscriptionData | null;
   features: Features | null;
-  updateUserPlan: (plan: 'silver' | 'gold' | 'platinum', paymentId: string) => Promise<void>;
+  updateUserPlan: (plan: Plan, paymentId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
+
+// Default features for a free user, used for initialization and resets.
+const defaultFeatures: Features = {
+    unlimitedViews: false,
+    contactAccess: false,
+    videoProfile: false,
+    adFree: false,
+    priorityListing: false,
+    advancedFilters: false,
+    verifiedBadge: false,
+    allTemplates: false,
+    whatsAppAlerts: false,
+    astroReports: 0,
+    remainingBoosts: 0,
+    relationshipManager: false,
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -83,11 +99,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const now = Timestamp.now();
             let isActive = sub?.isActive && (sub.expiryDate === null || (sub.expiryDate && sub.expiryDate > now));
             
-            // If subscription has expired, update it in the DB (can also be a daily cloud function)
+            // This is a good place for a Cloud Function to handle expirations,
+            // but a client-side check is a decent fallback.
             if (sub?.isActive && !isActive) {
                 console.log("Subscription expired for user:", firebaseUser.uid, "Updating status.");
-                updateDoc(userDocRef, { 'subscription.isActive': false });
-                // Here you would also reset features to free tier, ideally via a cloud function
+                updateDoc(userDocRef, { 
+                    'subscription.isActive': false,
+                    'features': defaultFeatures // Reset features to free tier
+                });
             }
 
             setIsPremium(isActive);
@@ -120,53 +139,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []); // Empty dependency array ensures this runs only once.
 
-  const updateUserPlan = useCallback(async (plan: 'silver' | 'gold' | 'platinum', paymentId: string) => {
-    if (user && db) {
-      const userDocRef = doc(db, "users", user.uid);
-      
-      let newSubscription: SubscriptionData;
-      let newFeatures: Partial<Features>;
+  const updateUserPlan = useCallback(async (plan: Plan, paymentId: string) => {
+    if (!user || !db) return;
 
-      const now = new Date();
-      const startDate = Timestamp.fromDate(now);
-      // Default expiry is 1 year, null for platinum
-      let expiryDate: Timestamp | null = Timestamp.fromDate(new Date(new Date().setFullYear(now.getFullYear() + 1)));
+    const userDocRef = doc(db, 'users', user.uid);
 
-      // Base features for any premium plan
-      const basePremiumFeatures = {
-        unlimitedViews: true,
-        contactAccess: true,
-        adFree: true,
-        priorityListing: true,
-        advancedFilters: true,
-        verifiedBadge: true,
-        allTemplates: true,
-      };
+    try {
+        let newSubscription: SubscriptionData;
+        let newFeatures: Features = { ...defaultFeatures }; // Start with a full default object
 
-      if (plan === 'silver') {
-        newSubscription = { plan, startDate, expiryDate, isActive: true, paymentId };
-        newFeatures = { ...basePremiumFeatures };
-      } else if (plan === 'gold') {
-        newSubscription = { plan, startDate, expiryDate, isActive: true, paymentId };
-        newFeatures = { ...basePremiumFeatures, videoProfile: true, whatsAppAlerts: true, astroReports: 5 };
-      } else if (plan === 'platinum') {
-        newSubscription = { plan, startDate, expiryDate: null, isActive: true, paymentId };
-        newFeatures = { 
-            ...basePremiumFeatures, 
-            videoProfile: true, 
-            whatsAppAlerts: true, 
-            astroReports: 10,
-            relationshipManager: true, 
-            remainingBoosts: 1 // Award first boost
+        const now = new Date();
+        const startDate = Timestamp.fromDate(now);
+        let expiryDate: Timestamp | null = Timestamp.fromDate(
+          new Date(new Date().setFullYear(now.getFullYear() + 1))
+        );
+
+        // Base features for any premium plan
+        const basePremiumFeatures = {
+          unlimitedViews: true,
+          contactAccess: true,
+          adFree: true,
+          priorityListing: true,
+          advancedFilters: true,
+          verifiedBadge: true,
+          allTemplates: true,
         };
-      } else {
-        return; // Should not happen
-      }
 
-      await updateDoc(userDocRef, {
-        subscription: newSubscription,
-        features: newFeatures
-      });
+        if (plan === 'silver') {
+          newFeatures = { ...newFeatures, ...basePremiumFeatures };
+        } else if (plan === 'gold') {
+          newFeatures = {
+            ...newFeatures,
+            ...basePremiumFeatures,
+            videoProfile: true,
+            whatsAppAlerts: true,
+            astroReports: 5,
+          };
+        } else if (plan === 'platinum') {
+          expiryDate = null; // Lifetime plan
+          newFeatures = {
+            ...newFeatures,
+            ...basePremiumFeatures,
+            videoProfile: true,
+            whatsAppAlerts: true,
+            astroReports: 10,
+            relationshipManager: true,
+            // Assuming this is a one-time grant on purchase, or handled by a monthly cron job
+            remainingBoosts: 1, 
+          };
+        }
+
+        newSubscription = { plan, startDate, expiryDate, isActive: plan !== 'free', paymentId };
+        
+        // Use updateDoc to update the specific fields.
+        // This is safer than setDoc with merge if the document is guaranteed to exist.
+        await updateDoc(userDocRef, {
+            subscription: newSubscription,
+            features: newFeatures,
+        });
+
+    } catch (error) {
+        console.error("Error updating user plan:", error);
+        // Optionally, re-throw or handle the error for the UI
     }
   }, [user]);
 
