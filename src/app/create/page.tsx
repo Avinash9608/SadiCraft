@@ -31,7 +31,7 @@ export default function ShaadiCraftPage() {
   const { formState: { isDirty }, reset, setValue } = form;
   const { toast } = useToast();
 
-  const handleDownloadPdf = useCallback(async () => {
+  const triggerPdfDownload = useCallback(async () => {
     if (typeof window !== 'undefined') {
       const html2pdf = (await import('html2pdf.js')).default;
 
@@ -60,26 +60,46 @@ export default function ShaadiCraftPage() {
               description: "There was an error generating the PDF. Please try again.",
             });
           });
-      } else {
-        if (!element) {
-          console.error("Biodata preview element not found for PDF generation.");
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not generate PDF. Preview element is missing.",
-          });
-        }
-        if (!html2pdf) {
-          console.error("html2pdf library not loaded.");
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not generate PDF. PDF library failed to load.",
-          });
-        }
       }
     }
   }, [form, toast]);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!authContext) return;
+
+    const isPremium = authContext.isPremium;
+    const layout = form.getValues('layout');
+    
+    // Premium users can download anything for free
+    if (isPremium) {
+      triggerPdfDownload();
+      return;
+    }
+
+    // Check for one-time payments if not premium
+    const modernDownloadUnlocked = sessionStorage.getItem('modern_download_unlocked') === 'true';
+    const traditionalUnlocked = sessionStorage.getItem('traditional_unlocked') === 'true';
+
+    if (layout === 'modern') {
+      if (modernDownloadUnlocked) {
+        triggerPdfDownload();
+      } else {
+        router.push('/checkout?action=download_modern');
+      }
+    } else if (layout === 'traditional') {
+      if (traditionalUnlocked) {
+        triggerPdfDownload();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Upgrade Required",
+          description: "Please unlock the traditional layout before downloading.",
+        });
+        router.push('/checkout?action=unlock_traditional&return_to_layout=traditional');
+      }
+    }
+  }, [authContext, form, router, toast, triggerPdfDownload]);
+
 
   // Load data from sessionStorage on component mount
   useEffect(() => {
@@ -87,12 +107,10 @@ export default function ShaadiCraftPage() {
       const savedData = sessionStorage.getItem('biodataFormData');
       if (savedData) {
         const parsedData = JSON.parse(savedData);
-        // Use form.reset to update the entire form state without losing react-hook-form's control
         reset(parsedData);
       }
     } catch (error) {
       console.error("Failed to load form data from session storage", error);
-      // If data is corrupted, remove it
       sessionStorage.removeItem('biodataFormData');
     }
   }, [reset]);
@@ -104,6 +122,7 @@ export default function ShaadiCraftPage() {
     }
   }, [watchedValues, isDirty]);
   
+  // Auth Guard and redirect logic
   useEffect(() => {
     if (authContext && !authContext.loading && !authContext.user) {
       router.push('/login');
@@ -115,13 +134,20 @@ export default function ShaadiCraftPage() {
     const layoutParam = searchParams.get('layout');
     if (layoutParam === 'modern' || layoutParam === 'traditional') {
       setValue('layout', layoutParam, { shouldDirty: true });
-      // Clean the URL so a refresh doesn't re-apply the layout
       const newUrl = window.location.pathname;
       window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
     }
   }, [searchParams, setValue]); 
 
-  // Auth Guard: Show spinner while loading or if user is not logged in (and redirect is pending)
+  // Effect to handle post-payment download for modern layout
+  useEffect(() => {
+    const modernDownloadUnlocked = sessionStorage.getItem('modern_download_unlocked') === 'true';
+    if (modernDownloadUnlocked) {
+      sessionStorage.removeItem('modern_download_unlocked'); // Use the unlock flag once
+      triggerPdfDownload();
+    }
+  }, [triggerPdfDownload]);
+
   if (authContext?.loading || !authContext?.user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -135,10 +161,8 @@ export default function ShaadiCraftPage() {
       <AppHeader form={form} onDownloadPdf={handleDownloadPdf} />
       <main className="flex-grow container mx-auto py-4 px-2 md:px-0">
         <div className="flex flex-col lg:flex-row lg:space-x-6 h-full">
-          {/* Form Section */}
           <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)] no-print mb-6 lg:mb-0">
             <div className="p-1 md:p-4 rounded-lg">
-              {/* Ad Placeholder - Shown only to Free users */}
               {!authContext.isPremium && (
                  <div className="mb-6">
                   <div className="w-[300px] h-[250px] mx-auto bg-muted/50 flex items-center justify-center border border-dashed rounded-lg">
@@ -149,8 +173,6 @@ export default function ShaadiCraftPage() {
               <BiodataForm form={form} />
             </div>
           </ScrollArea>
-
-          {/* Preview Section */}
           <ScrollArea className="w-full lg:w-1/2 h-auto lg:max-h-[calc(100vh-150px)]">
              <div className="p-1 md:p-4 rounded-lg" id="biodata-preview-container">
               <BiodataPreview data={watchedValues} isDirty={isDirty} />

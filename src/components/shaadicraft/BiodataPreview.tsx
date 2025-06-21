@@ -16,25 +16,41 @@ interface BiodataPreviewProps {
   isDirty: boolean; 
 }
 
-const PremiumFeatureLock: React.FC = () => (
-  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
+const TraditionalLayoutLock: React.FC = () => (
+  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg p-4">
     <Lock className="h-16 w-16 text-primary mb-4" />
-    <h3 className="text-2xl font-bold text-primary-foreground mb-2">Premium Layout</h3>
+    <h3 className="text-2xl font-bold text-primary-foreground mb-2 text-center">Unlock Traditional Layout</h3>
     <p className="text-center text-primary-foreground/80 mb-6 max-w-xs">
-      This beautiful traditional layout is a premium feature. Upgrade your plan to use it and access all other benefits!
+      Unlock this beautiful layout for just ₹10, or upgrade to a subscription for full access to all features.
     </p>
-    <Button asChild>
-      <Link href="/checkout?plan=silver&return_to_layout=traditional">
-        <Star className="mr-2 h-4 w-4" />
-        Upgrade Now
-      </Link>
-    </Button>
+    <div className="flex flex-col gap-2 w-full max-w-xs">
+       <Button asChild size="lg">
+        <Link href="/checkout?action=unlock_traditional&return_to_layout=traditional">
+          Pay ₹10 to Unlock
+        </Link>
+      </Button>
+      <Button asChild variant="outline" size="lg">
+        <Link href="/#pricing">
+           <Star className="mr-2 h-4 w-4" />
+           View Subscription Plans
+        </Link>
+      </Button>
+    </div>
   </div>
 );
+
 
 const BiodataPreview: React.FC<BiodataPreviewProps> = ({ data, isDirty }) => {
   const [isLoading, setIsLoading] = useState(true);
   const authContext = useContext(AuthContext);
+  const [isTraditionalUnlocked, setIsTraditionalUnlocked] = useState(false);
+
+  useEffect(() => {
+    // Check session storage on mount and whenever the layout data might change
+    const unlocked = sessionStorage.getItem('traditional_unlocked') === 'true';
+    setIsTraditionalUnlocked(unlocked);
+  }, [data.layout]);
+
 
   useEffect(() => {
     if (isDirty || data.fullName) {
@@ -64,7 +80,7 @@ const BiodataPreview: React.FC<BiodataPreviewProps> = ({ data, isDirty }) => {
   }
 
   const isPremiumLayout = data.layout === 'traditional';
-  const showLock = isPremiumLayout && !authContext?.isPremium;
+  const showLock = isPremiumLayout && !authContext?.isPremium && !isTraditionalUnlocked;
 
   const layoutComponent = data.layout === 'modern' 
     ? <ModernLayout data={data} /> 
@@ -72,7 +88,7 @@ const BiodataPreview: React.FC<BiodataPreviewProps> = ({ data, isDirty }) => {
 
   return (
     <div className="relative bg-muted/30 p-1 md:p-2 rounded-lg shadow-inner h-full">
-      {showLock && <PremiumFeatureLock />}
+      {showLock && <TraditionalLayoutLock />}
       <div className={showLock ? 'blur-md pointer-events-none' : ''}>
          {React.cloneElement(layoutComponent, { key: data.layout })}
       </div>
